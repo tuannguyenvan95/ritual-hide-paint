@@ -412,15 +412,18 @@ function GameContent() {
               <Award className="w-20 h-20 text-ritual-primary mx-auto mb-6 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
               <h2 className="text-2xl font-bold mb-2">Ready to Play?</h2>
               <p className="text-slate-400 mb-8">Connect your wallet to start hiding or seeking.</p>
-              {connectors.map((connector) => (
-                <button
-                  key={connector.uid}
-                  onClick={() => connect({ connector })}
-                  className="w-full py-4 bg-gradient-to-r from-ritual-primary to-purple-600 hover:from-purple-500 hover:to-ritual-primary text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1"
-                >
-                  Connect {connector.name}
-                </button>
-              ))}
+              <div className="flex flex-col gap-3 w-full">
+                {connectors.map((connector) => (
+                  <button
+                    key={connector.uid}
+                    onClick={() => connect({ connector })}
+                    className="w-full py-3.5 bg-slate-800/60 hover:bg-ritual-primary/20 text-slate-200 hover:text-white font-semibold rounded-xl border border-slate-700 hover:border-ritual-primary/60 shadow-sm hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-ritual-accent animate-pulse"></div>
+                    Connect {connector.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
