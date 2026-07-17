@@ -76,6 +76,7 @@ function GameContent() {
   const [playerName, setPlayerName] = useState('')
   const [nameSet, setNameSet] = useState(false)
   const [setupTab, setSetupTab] = useState<'config' | 'character' | 'preview'>('config')
+  const [betAmount, setBetAmount] = useState<number>(10)
 
   // Fetch native token balance on Ritual Testnet
   const { data: balanceData } = useBalance({ address: address, chainId: 1979 })
@@ -164,7 +165,6 @@ function GameContent() {
     setInGame(true)
     setGrid(Array(100).fill(0))
     setHiddenIndex(null)
-    setCharacterPixels(CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent'))
     setGameStatus('waiting')
     setBotMessage('')
   }
@@ -330,7 +330,17 @@ function GameContent() {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-ritual-primary to-ritual-accent bg-clip-text text-transparent drop-shadow-sm">Ritual Hide & Paint</h1>
             <p className="text-slate-400 text-sm">Mode: <span className="text-white capitalize font-semibold">{mode} (vs {opponent})</span> | Map: <span className="text-white font-semibold">{mapNames[map]}</span></p>
           </div>
-          <button onClick={() => setInGame(false)} className="px-4 py-2 border border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-semibold">Quit Game</button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-ritual-gold/10 border border-ritual-gold/30 px-4 py-2 rounded-lg">
+              <span className="text-ritual-gold font-bold">{betAmount} RITUAL</span>
+              <span className="text-slate-400 text-xs uppercase tracking-wider">Pot</span>
+            </div>
+            <div className="flex items-center gap-2 bg-ritual-primary/10 border border-ritual-primary/30 px-4 py-2 rounded-lg">
+              <User size={16} className="text-ritual-primary" />
+              <span className="text-white font-bold">{playerName}</span>
+            </div>
+            <button onClick={() => setInGame(false)} className="px-4 py-2 border border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-semibold">Quit Game</button>
+          </div>
         </header>
 
         <main className="flex-1 flex gap-6 min-h-0">
@@ -732,6 +742,26 @@ function GameContent() {
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    {/* Betting Amount */}
+                    <div>
+                      <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                        <Wallet className="text-ritual-gold" size={18}/> WAGER AMOUNT
+                      </h3>
+                      <div className="flex gap-2">
+                        {[10, 50, 100].map(amount => (
+                          <button
+                            key={amount}
+                            onClick={() => { setBetAmount(amount); playSound('click') }}
+                            onMouseEnter={() => playSound('hover')}
+                            className={`flex-1 py-3 rounded-xl font-bold border-2 transition-all ${betAmount === amount ? 'border-ritual-gold bg-ritual-gold/10 text-ritual-gold shadow-lg shadow-ritual-gold/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                          >
+                            {amount}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2 text-center">Stake RITUAL tokens to play. Winner takes all!</p>
                     </div>
 
                     {/* Start Button */}
