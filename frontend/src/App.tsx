@@ -359,9 +359,6 @@ function GameContent() {
               setBotMessage(`Bot: "I scanned everywhere... but your camouflage (${Math.round(100 - (distance/3))}%) was too perfect for this ${mapDifficulties[map]} map! I lose!"`)
             } else {
               setBotMessage(`Bot: "Found you! Your colors stood out. Mismatch: ${Math.round(distance)} (Needed < ${threshold} for this map). I win!"`)
-              const newGrid = [...grid]
-              newGrid[hiddenIndex] = 2 
-              setGrid(newGrid)
             }
             
             setGameStatus('finished')
