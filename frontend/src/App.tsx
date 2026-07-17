@@ -62,7 +62,8 @@ function GameContent() {
   const [gameStatus, setGameStatus] = useState<'waiting' | 'painting' | 'ready' | 'finished'>('waiting')
   
   const [paintColor, setPaintColor] = useState('#8b5cf6')
-  const [activeTool, setActiveTool] = useState<'brush' | 'eraser' | 'picker'>('brush')
+  const [activeTool, setActiveTool] = useState<'brush' | 'eraser' | 'picker' | 'move'>('brush')
+  const [isDragging, setIsDragging] = useState(false)
   const [characterPixels, setCharacterPixels] = useState<string[]>(
     CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent')
   ) 
@@ -203,6 +204,7 @@ function GameContent() {
       setActiveTool('brush')
       return
     }
+    if (activeTool === 'move') return
 
     if (CHARACTER_MASK[idx] === 0) return 
 
@@ -277,7 +279,7 @@ function GameContent() {
       e.stopPropagation()
       e.preventDefault()
     } else if (mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'waiting')) {
-      if (hiddenPosition) {
+      if (hiddenPosition && activeTool !== 'move') {
         const inCharBounds = pxX >= hiddenPosition.x && pxX < hiddenPosition.x + 16 &&
                              pxY >= hiddenPosition.y && pxY < hiddenPosition.y + 16
         if (inCharBounds && gameStatus === 'painting') return
@@ -286,10 +288,31 @@ function GameContent() {
       const charX = Math.max(0, Math.min(160 - 16, Math.floor(pxX - 8)))
       const charY = Math.max(0, Math.min(160 - 16, Math.floor(pxY - 8)))
       setHiddenPosition({ x: charX, y: charY })
+      setIsDragging(true)
       if (gameStatus === 'waiting') setGameStatus('painting')
       e.stopPropagation()
       e.preventDefault()
     }
+  }
+
+  const handleMapMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    if (mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'waiting')) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      const scaleX = 160 / rect.width
+      const scaleY = 160 / rect.height
+      const pxX = Math.floor(x * scaleX)
+      const pxY = Math.floor(y * scaleY)
+      const charX = Math.max(0, Math.min(160 - 16, Math.floor(pxX - 8)))
+      const charY = Math.max(0, Math.min(160 - 16, Math.floor(pxY - 8)))
+      setHiddenPosition({ x: charX, y: charY })
+    }
+  }
+
+  const handleMapMouseUp = () => {
+    setIsDragging(false)
   }
 
   const confirmHideAndBotSeek = async () => {
@@ -402,9 +425,12 @@ function GameContent() {
             </div>
 
             <div 
-              className={`flex-1 relative m-8 rounded-xl overflow-hidden shadow-2xl border border-slate-600 max-w-3xl max-h-[800px] aspect-square mx-auto my-auto ${activeTool === 'picker' ? 'cursor-crosshair' : ''}`}
+              className={`flex-1 relative m-8 rounded-xl overflow-hidden shadow-2xl border border-slate-600 max-w-3xl max-h-[800px] aspect-square mx-auto my-auto ${activeTool === 'picker' ? 'cursor-crosshair' : activeTool === 'move' ? 'cursor-move' : isDragging ? 'cursor-grabbing' : ''}`}
               style={{ imageRendering: 'pixelated' }}
               onMouseDownCapture={handleMapMouseDown}
+              onMouseMove={handleMapMouseMove}
+              onMouseUp={handleMapMouseUp}
+              onMouseLeave={handleMapMouseUp}
             >
               {pixelatedMapUrl && <img ref={imgRef} src={pixelatedMapUrl} alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none" />}
               
@@ -480,6 +506,13 @@ function GameContent() {
                     title="Eraser"
                   >
                     <Eraser size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setActiveTool('move')}
+                    className={`flex items-center justify-center p-3 rounded-lg transition-colors ${activeTool === 'move' ? 'bg-orange-500 text-white' : 'bg-slate-800 text-orange-400 hover:bg-slate-700'}`}
+                    title="Move Character"
+                  >
+                    <Move size={18} />
                   </button>
                 </div>
 
