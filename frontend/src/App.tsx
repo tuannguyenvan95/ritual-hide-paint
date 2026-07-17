@@ -439,13 +439,13 @@ function GameContent() {
 
   if (inGame) {
     return (
-      <div className="flex flex-col h-screen p-6 bg-ritual-dark">
-        <div className="w-full max-w-7xl flex flex-col h-full mx-auto">
+      <div className="flex flex-col h-screen overflow-hidden p-4 bg-ritual-dark">
+        <div className="w-full max-w-7xl flex flex-col h-full mx-auto min-h-0">
           <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
           
-          <header className="flex justify-between items-center mb-6 bg-slate-800/80 p-4 rounded-xl border border-slate-700 backdrop-blur-md shadow-lg z-50 flex-shrink-0">
+          <header className="flex justify-between items-center mb-4 bg-slate-800/80 p-3 rounded-xl border border-slate-700 backdrop-blur-md shadow-lg z-50 flex-shrink-0">
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-ritual-primary to-ritual-accent bg-clip-text text-transparent drop-shadow-sm">Ritual Hide & Paint</h1>
+            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-ritual-primary to-ritual-accent bg-clip-text text-transparent drop-shadow-sm">Ritual Hide & Paint</h1>
             <p className="text-slate-400 text-sm">Mode: <span className="text-white capitalize font-semibold">{mode} (vs {opponent})</span> | Map: <span className="text-white font-semibold">{mapNames[map]}</span></p>
           </div>
           <div className="flex items-center gap-4">
@@ -461,8 +461,8 @@ function GameContent() {
           </div>
         </header>
 
-        <main className="flex-1 flex gap-6 min-h-0">
-          <div className="flex-1 rounded-2xl border-2 border-slate-700 overflow-hidden flex flex-col relative bg-slate-900 shadow-2xl relative group">
+        <main className="flex-1 flex gap-4 min-h-0">
+          <div className="flex-1 rounded-2xl border-2 border-slate-700 overflow-hidden flex items-center justify-center relative bg-slate-900 shadow-2xl relative group p-4">
             
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md px-6 py-3 rounded-full border border-slate-600 shadow-xl flex items-center gap-3">
               {gameStatus === 'waiting' && mode === 'hider' && <span className="text-ritual-accent font-bold animate-pulse">Click a grid cell to move your character there!</span>}
@@ -472,7 +472,7 @@ function GameContent() {
             </div>
 
             <div 
-              className={`flex-1 relative m-8 rounded-xl overflow-hidden shadow-2xl border border-slate-600 max-w-3xl max-h-[800px] aspect-square mx-auto my-auto ${activeTool === 'picker' ? 'cursor-crosshair' : activeTool === 'move' ? 'cursor-move' : isDragging ? 'cursor-grabbing' : ''}`}
+              className={`relative rounded-xl overflow-hidden shadow-2xl border border-slate-600 aspect-square h-full max-w-full ${activeTool === 'picker' ? 'cursor-crosshair' : activeTool === 'move' ? 'cursor-move' : isDragging ? 'cursor-grabbing' : ''}`}
               style={{ imageRendering: 'pixelated' }}
               onMouseDownCapture={handleMapMouseDown}
               onMouseMove={handleMapMouseMove}
@@ -540,10 +540,10 @@ function GameContent() {
             </div>
           </div>
 
-          <div className="w-[420px] flex flex-col gap-6">
+          <div className="w-full max-w-[380px] flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1">
             {mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'ready' || gameStatus === 'finished') && (
-              <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-xl backdrop-blur-md">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Brush className="text-ritual-primary"/> Character Camouflage</h3>
+              <div className="bg-slate-800/80 p-4 md:p-5 rounded-2xl border border-slate-700 shadow-xl backdrop-blur-md">
+                <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Brush className="text-ritual-primary"/> Character Camouflage</h3>
                 
                 <div className="flex gap-2 mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700">
                   <input 
@@ -581,7 +581,7 @@ function GameContent() {
                   </button>
                 </div>
 
-                <div className="relative w-full aspect-square rounded-xl border-2 border-slate-600 overflow-hidden mb-6 shadow-inner bg-slate-900" style={{ imageRendering: 'pixelated' }}>
+                <div className="relative w-full aspect-square rounded-xl border-2 border-slate-600 overflow-hidden mb-4 shadow-inner bg-slate-900" style={{ imageRendering: 'pixelated' }}>
                   {hiddenPosition !== null && pixelatedMapUrl && (
                      <div 
                        className="absolute inset-0 opacity-60 pointer-events-none"
