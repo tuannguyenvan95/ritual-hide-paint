@@ -60,6 +60,7 @@ function GameContent() {
   const [grid, setGrid] = useState<number[]>(Array(100).fill(0))
   const [hiddenPosition, setHiddenPosition] = useState<{x: number, y: number} | null>(null)
   const [gameStatus, setGameStatus] = useState<'waiting' | 'painting' | 'ready' | 'finished'>('waiting')
+  const [gameResult, setGameResult] = useState<'win' | 'loss' | null>(null)
   
   const [paintColor, setPaintColor] = useState('#8b5cf6')
   const [activeTool, setActiveTool] = useState<'brush' | 'eraser' | 'picker' | 'move'>('brush')
@@ -368,6 +369,7 @@ function GameContent() {
             
             if (paintedCount === 0) {
               setBotMessage("Bot: You didn't paint anything! Found you immediately!")
+              setGameResult('loss')
               setGameStatus('finished')
               return
             }
@@ -380,8 +382,10 @@ function GameContent() {
 
             if (distance < threshold) {
               setBotMessage(`Bot: "I scanned everywhere... but your camouflage (${Math.round(100 - (distance/3))}%) was too perfect for this ${mapDifficulties[map]} map! I lose!"`)
+              setGameResult('win')
             } else {
               setBotMessage(`Bot: "Found you! Your colors stood out. Mismatch: ${Math.round(distance)} (Needed < ${threshold} for this map). I win!"`)
+              setGameResult('loss')
             }
             
             setGameStatus('finished')
@@ -433,6 +437,24 @@ function GameContent() {
               onMouseUp={handleMapMouseUp}
               onMouseLeave={handleMapMouseUp}
             >
+              {gameStatus === 'finished' && gameResult && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+                  <div className={`p-8 rounded-2xl border-2 flex flex-col items-center shadow-2xl ${gameResult === 'win' ? 'border-ritual-accent bg-ritual-accent/20' : 'border-red-500 bg-red-500/20'}`}>
+                    {gameResult === 'win' ? (
+                      <Trophy className="w-24 h-24 mb-4 text-ritual-accent animate-bounce" />
+                    ) : (
+                      <AlertCircle className="w-24 h-24 mb-4 text-red-500 animate-pulse" />
+                    )}
+                    <h2 className={`text-6xl font-black tracking-widest uppercase ${gameResult === 'win' ? 'text-ritual-accent' : 'text-red-500'}`} style={{ fontFamily: "'Orbitron', sans-serif" }}>
+                      {gameResult === 'win' ? 'You Win!' : 'You Lose!'}
+                    </h2>
+                    <p className="text-white text-xl mt-4 font-bold">
+                      {gameResult === 'win' ? 'Your camouflage was perfect.' : 'The AI found you.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {pixelatedMapUrl && <img ref={imgRef} src={pixelatedMapUrl} alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none" />}
               
               {mode !== 'hider' && (
