@@ -187,11 +187,12 @@ function GameContent() {
 
   const handleCellClick = (index: number) => {
     if (gameStatus === 'finished') return
+    if (activeTool === 'picker' && mode === 'hider') return
 
     if (mode === 'hider') {
-      if (gameStatus === 'ready' || gameStatus === 'painting') return 
+      if (gameStatus === 'ready') return 
       setHiddenIndex(index)
-      setGameStatus('painting')
+      if (gameStatus === 'waiting') setGameStatus('painting')
     } else {
       if (gameStatus === 'waiting' || opponent === 'bot') return 
       const newGrid = [...grid]
@@ -249,6 +250,44 @@ function GameContent() {
       const [r, g, b] = imgData.data
       const pickedHex = rgbToHex(r, g, b)
       setPaintColor(pickedHex)
+    }
+  }
+
+  const pickColorFromGlobalXY = (pxX: number, pxY: number) => {
+    if (!hiddenCanvasRef.current || !pixelatedMapUrl) return
+    const canvas = hiddenCanvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    const img = new Image()
+    img.src = pixelatedMapUrl
+    img.onload = () => {
+      canvas.width = 160
+      canvas.height = 160
+      ctx.drawImage(img, 0, 0)
+      const imgData = ctx.getImageData(pxX, pxY, 1, 1)
+      const [r, g, b] = imgData.data
+      const pickedHex = rgbToHex(r, g, b)
+      setPaintColor(pickedHex)
+    }
+  }
+
+  const handleMapMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (activeTool === 'picker' && mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'waiting')) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      const scaleX = 160 / rect.width
+      const scaleY = 160 / rect.height
+      
+      const pxX = Math.floor(x * scaleX)
+      const pxY = Math.floor(y * scaleY)
+      
+      pickColorFromGlobalXY(pxX, pxY)
+      setActiveTool('brush')
+      e.stopPropagation()
+      e.preventDefault()
     }
   }
 
@@ -369,8 +408,12 @@ function GameContent() {
               {gameStatus === 'finished' && <span className="text-ritual-primary font-bold">Game Over</span>}
             </div>
 
-            <div className="flex-1 relative m-8 rounded-xl overflow-hidden shadow-2xl border border-slate-600 max-w-3xl max-h-[800px] aspect-square mx-auto my-auto" style={{ imageRendering: 'pixelated' }}>
-              {pixelatedMapUrl && <img ref={imgRef} src={pixelatedMapUrl} alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-90" />}
+            <div 
+              className={`flex-1 relative m-8 rounded-xl overflow-hidden shadow-2xl border border-slate-600 max-w-3xl max-h-[800px] aspect-square mx-auto my-auto ${activeTool === 'picker' ? 'cursor-crosshair' : ''}`}
+              style={{ imageRendering: 'pixelated' }}
+              onMouseDownCapture={handleMapMouseDown}
+            >
+              {pixelatedMapUrl && <img ref={imgRef} src={pixelatedMapUrl} alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none" />}
               
               <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 gap-0">
                 {grid.map((cellState, index) => (
