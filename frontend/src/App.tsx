@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
-import { Brush, Search, Zap, Crosshair, Award, MapPin, CheckCircle2, Eraser, Bot, Users } from 'lucide-react'
+import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users } from 'lucide-react'
 
 import forestMap from './assets/forest_map.jpg'
 import cityMap from './assets/city_map.jpg'
@@ -31,7 +31,7 @@ function GameContent() {
   const [mode, setMode] = useState<'hider' | 'seeker' | null>(null)
   const [opponent, setOpponent] = useState<'bot' | 'pvp'>('bot')
   const [map, setMap] = useState<number>(0)
-  const [bet, setBet] = useState('0.01')
+
   const [inGame, setInGame] = useState(false)
   
   // Grid and positions
