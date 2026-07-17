@@ -394,9 +394,10 @@ function GameContent() {
   if (inGame) {
     return (
       <div className="flex flex-col h-screen p-6 bg-ritual-dark">
-        <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
-        
-        <header className="flex justify-between items-center mb-6 bg-slate-800/80 p-4 rounded-xl border border-slate-700 backdrop-blur-md shadow-lg z-50">
+        <div className="w-full max-w-7xl flex flex-col h-full mx-auto">
+          <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
+          
+          <header className="flex justify-between items-center mb-6 bg-slate-800/80 p-4 rounded-xl border border-slate-700 backdrop-blur-md shadow-lg z-50 flex-shrink-0">
           <div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-ritual-primary to-ritual-accent bg-clip-text text-transparent drop-shadow-sm">Ritual Hide & Paint</h1>
             <p className="text-slate-400 text-sm">Mode: <span className="text-white capitalize font-semibold">{mode} (vs {opponent})</span> | Map: <span className="text-white font-semibold">{mapNames[map]}</span></p>
@@ -569,6 +570,7 @@ function GameContent() {
             )}
           </div>
         </main>
+        </div>
       </div>
     )
   }
