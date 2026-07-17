@@ -87,6 +87,40 @@ function GameContent() {
   const [nameSet, setNameSet] = useState(false)
   const [setupTab, setSetupTab] = useState<'config' | 'character' | 'preview'>('config')
   const [betAmount, setBetAmount] = useState<number | string>(1)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [leaderboard, setLeaderboard] = useState<{name: string, wins: number}[]>([])
+
+  useEffect(() => {
+    const saved = localStorage.getItem('ritual_leaderboard')
+    if (saved) {
+      setLeaderboard(JSON.parse(saved))
+    } else {
+      // Mock data if empty
+      const mock = [
+        { name: 'Vitalik', wins: 42 },
+        { name: '0xGhost', wins: 24 },
+        { name: 'PixelNinja', wins: 15 },
+      ]
+      setLeaderboard(mock)
+      localStorage.setItem('ritual_leaderboard', JSON.stringify(mock))
+    }
+  }, [])
+
+  const recordWin = () => {
+    const name = playerName.trim() || 'Anonymous'
+    setLeaderboard(prev => {
+      const newList = [...prev]
+      const existing = newList.find(p => p.name === name)
+      if (existing) {
+        existing.wins += 1
+      } else {
+        newList.push({ name, wins: 1 })
+      }
+      newList.sort((a, b) => b.wins - a.wins)
+      localStorage.setItem('ritual_leaderboard', JSON.stringify(newList))
+      return newList
+    })
+  }
 
   // Fetch native token balance on Ritual Testnet
   const { data: balanceData } = useBalance({ address: address, chainId: 1979 })
@@ -389,8 +423,8 @@ function GameContent() {
             const threshold = isHard ? 60 : 100 
 
             if (distance < threshold) {
-
               setGameResult('win')
+              recordWin()
             } else {
 
               setGameResult('loss')
@@ -608,6 +642,43 @@ function GameContent() {
         {[...Array(8)].map((_, i) => <div key={i} className="pixel-particle" />)}
       </div>
 
+      {/* ===== LEADERBOARD MODAL ===== */}
+      {showLeaderboard && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setShowLeaderboard(false)}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
+          <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-700/50 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-yellow-500/10 animate-fade-in-up" onClick={e => e.stopPropagation()}>
+            <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent"></div>
+            </div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif" }}><Trophy className="text-yellow-400"/> Top Winners</h3>
+              <button onClick={() => { setShowLeaderboard(false); playSound('click') }} className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-lg">&times;</button>
+            </div>
+            
+            <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              {leaderboard.length === 0 ? (
+                <div className="text-center text-slate-500 py-8">No winners yet. Be the first!</div>
+              ) : (
+                leaderboard.map((player, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${idx === 0 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : idx === 1 ? 'bg-slate-300/20 text-slate-300 border border-slate-300/50' : idx === 2 ? 'bg-amber-700/20 text-amber-500 border border-amber-700/50' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>
+                        {idx + 1}
+                      </div>
+                      <span className="font-bold text-slate-200">{player.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                      <span className="text-yellow-400 font-bold">{player.wins}</span>
+                      <span className="text-slate-500 text-xs">wins</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ===== WALLET MODAL ===== */}
       {showWalletModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setShowWalletModal(false)}>
@@ -766,7 +837,10 @@ function GameContent() {
                   </div>
                 )}
 
-                <button onClick={() => { disconnect(); playSound('click') }} className="text-sm px-3 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors font-medium border border-red-500/10 ml-auto">Disconnect</button>
+                <div className="flex gap-2 ml-auto">
+                  <button onClick={() => { setShowLeaderboard(true); playSound('click') }} className="text-sm px-3 py-2 bg-yellow-500/10 text-yellow-400 rounded-lg hover:bg-yellow-500/20 transition-colors font-medium border border-yellow-500/10 flex items-center gap-1"><Trophy size={14} /> Leaderboard</button>
+                  <button onClick={() => { disconnect(); playSound('click') }} className="text-sm px-3 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors font-medium border border-red-500/10">Disconnect</button>
+                </div>
               </div>
             </div>
 
