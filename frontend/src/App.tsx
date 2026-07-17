@@ -80,6 +80,7 @@ function GameContent() {
   const [mode, setMode] = useState<'hider' | 'seeker' | null>(null)
   const [opponent, setOpponent] = useState<'bot' | 'pvp'>('bot')
   const [map, setMap] = useState<number>(0)
+  const [mapCategory, setMapCategory] = useState<number>(0)
   
   const [inGame, setInGame] = useState(false)
   const [grid, setGrid] = useState<number[]>(Array(100).fill(0))
@@ -1067,33 +1068,44 @@ function GameContent() {
                   <div className="space-y-7 flex flex-col">
                     {/* Map Selection */}
                     <div className="flex-1 min-h-0 flex flex-col">
-                      <h3 className="text-lg font-bold mb-2 shrink-0" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>SELECT MAP</h3>
-                      <div className="overflow-y-auto pr-2 custom-scrollbar space-y-5" style={{ maxHeight: '280px' }}>
-                        {['EASY', 'NORMAL', 'HARD'].map((diffCategory, catIdx) => (
-                          <div key={diffCategory}>
-                            <h4 className={`text-xs font-bold mb-2 flex items-center gap-2 ${catIdx === 0 ? 'text-green-400' : catIdx === 1 ? 'text-yellow-400' : 'text-red-400'}`}>
-                              <span className="w-2 h-2 rounded-full bg-current"></span> {diffCategory} MAPS
-                            </h4>
-                            <div className="grid grid-cols-2 gap-3">
-                              {mapNames.map((m, idx) => {
-                                if (Math.floor(idx / 4) !== catIdx) return null
-                                return (
-                                  <button
-                                    key={m}
-                                    onClick={() => { setMap(idx); playSound('click') }}
-                                    onMouseEnter={() => playSound('hover')}
-                                    className={`map-card relative h-20 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
-                                  >
-                                    <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-25'}`} style={{ imageRendering: 'pixelated' }} />
-                                    <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1">
-                                      <span className="text-sm tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.65rem' }}>{m.toUpperCase()}</span>
-                                    </div>
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex items-center justify-between mb-3 shrink-0">
+                        <h3 className="text-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>SELECT MAP</h3>
+                        <div className="flex gap-1 bg-slate-900/80 p-1 rounded-lg border border-slate-700/50">
+                          {['EASY', 'NORMAL', 'HARD'].map((diff, idx) => (
+                            <button
+                              key={diff}
+                              onClick={() => { setMapCategory(idx); playSound('click') }}
+                              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                                mapCategory === idx 
+                                  ? idx === 0 ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                                    : idx === 1 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' 
+                                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                  : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                              }`}
+                            >
+                              {diff}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        {mapNames.map((m, idx) => {
+                          if (Math.floor(idx / 4) !== mapCategory) return null
+                          return (
+                            <button
+                              key={m}
+                              onClick={() => { setMap(idx); playSound('click') }}
+                              onMouseEnter={() => playSound('hover')}
+                              className={`map-card relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
+                            >
+                              <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-25'}`} style={{ imageRendering: 'pixelated' }} />
+                              <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1.5">
+                                <span className="text-sm tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.7rem' }}>{m.toUpperCase()}</span>
+                              </div>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
 
