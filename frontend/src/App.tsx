@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react'
-import { WagmiProvider, useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useState } from 'react'
+import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { parseEther } from 'viem'
 import { config } from './config/web3'
 import { Brush, Search, Zap, Crosshair, Award, MapPin, CheckCircle2 } from 'lucide-react'
 
@@ -14,7 +13,7 @@ import underwaterMap from './assets/underwater_map.jpg'
 const mapImages = [forestMap, cityMap, spaceMap, underwaterMap]
 const mapNames = ['Forest', 'City', 'Space', 'Underwater']
 
-const CONTRACT_ADDRESS = '0xf3324E3C7bbCeca8E1E6fE1E917029F1A5F493EF' // Deployed on Ritual Testnet
+
 
 const queryClient = new QueryClient()
 
