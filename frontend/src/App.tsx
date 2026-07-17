@@ -917,22 +917,19 @@ function GameContent() {
                       </div>
                     </div>
 
-                    {/* Project Links */}
-                    <div className="pt-2 mt-auto pb-2">
-                      <h3 className="text-sm font-bold mb-3 flex items-center gap-2 text-slate-500 tracking-wider" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem' }}>
-                        COMMUNITY
-                      </h3>
-                      <div className="flex gap-3">
-                        <a href="https://discord.gg/ritual" target="_blank" rel="noopener noreferrer" className="flex-1 py-3 rounded-xl font-bold border-2 border-slate-700/50 text-slate-400 hover:border-indigo-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all text-center flex items-center justify-center gap-2 text-xs">
-                           Discord
-                        </a>
-                        <a href="https://twitter.com/ritualnet" target="_blank" rel="noopener noreferrer" className="flex-1 py-3 rounded-xl font-bold border-2 border-slate-700/50 text-slate-400 hover:border-sky-400 hover:text-sky-400 hover:bg-sky-400/10 transition-all text-center flex items-center justify-center gap-2 text-xs">
-                           X (Twitter)
-                        </a>
+                    {/* How to play */}
+                    <div className="pt-4 mt-auto">
+                      <div className="bg-slate-800/40 border border-slate-700/50 p-4 rounded-xl">
+                        <h3 className="text-sm font-bold mb-2 flex items-center gap-2 text-slate-300" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem' }}>
+                          <span className="text-ritual-primary">💡</span> HOW TO PLAY
+                        </h3>
+                        <ul className="text-xs text-slate-400 space-y-2 list-disc pl-4">
+                          <li>Select your role: <span className="text-white">Hider</span> (Camouflage) or <span className="text-white">Seeker</span> (Find).</li>
+                          <li>Stake your <span className="text-yellow-400">RITUAL</span> tokens to enter the match.</li>
+                          <li><span className="text-white">Hiders</span> paint their character to blend into the map.</li>
+                          <li><span className="text-white">Seekers</span> have limited time/clicks to find the hidden player.</li>
+                        </ul>
                       </div>
-                      <a href="https://ritual.net" target="_blank" rel="noopener noreferrer" className="mt-3 block w-full py-3 rounded-xl font-bold border-2 border-slate-700/50 text-slate-400 hover:border-slate-500 hover:text-white hover:bg-slate-800 transition-all text-center text-xs">
-                        ritual.net
-                      </a>
                     </div>
                   </div>
 
@@ -1141,8 +1138,23 @@ function GameContent() {
         )}
 
         {/* Footer */}
-        <div className="text-center mt-8 text-slate-600 text-xs" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '8px', letterSpacing: '0.1em' }}>
-          POWERED BY RITUAL NETWORK
+        <div className="mt-8 flex flex-col items-center justify-center gap-4">
+          <div className="flex gap-6 items-center">
+            <a href="https://discord.gg/ritual" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-indigo-400 transition-colors text-sm font-bold flex items-center gap-2">
+              Discord
+            </a>
+            <span className="text-slate-700">•</span>
+            <a href="https://twitter.com/ritualnet" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-sky-400 transition-colors text-sm font-bold flex items-center gap-2">
+              X (Twitter)
+            </a>
+            <span className="text-slate-700">•</span>
+            <a href="https://ritual.net" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
+              ritual.net
+            </a>
+          </div>
+          <div className="text-slate-600 text-[10px]" style={{ fontFamily: "'Press Start 2P', monospace", letterSpacing: '0.1em' }}>
+            POWERED BY RITUAL NETWORK
+          </div>
         </div>
       </div>
     </div>
