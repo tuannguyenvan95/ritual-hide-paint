@@ -91,7 +91,7 @@ function GameContent() {
   const [leaderboard, setLeaderboard] = useState<{name: string, wins: number}[]>([])
   const [isMatchmaking, setIsMatchmaking] = useState(false)
   const [matchmakeTimer, setMatchmakeTimer] = useState(0)
-  const [gameTimer, setGameTimer] = useState(30)
+  const [gameTimer, setGameTimer] = useState(60)
 
   useEffect(() => {
     const saved = localStorage.getItem('ritual_leaderboard')
@@ -228,7 +228,7 @@ function GameContent() {
     setGrid(Array(100).fill(0))
     setHiddenPosition(null)
     setGameStatus('waiting')
-    setGameTimer(30)
+    setGameTimer(60)
   }, [])
 
   const startGame = () => {
