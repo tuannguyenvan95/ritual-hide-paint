@@ -75,12 +75,11 @@ function GameContent() {
   const [showWalletModal, setShowWalletModal] = useState(false)
   const [playerName, setPlayerName] = useState('')
   const [nameSet, setNameSet] = useState(false)
-  const [showMapPreview, setShowMapPreview] = useState(false)
   const [setupTab, setSetupTab] = useState<'config' | 'character' | 'preview'>('config')
 
   // Fetch native token balance on Ritual Testnet
   const { data: balanceData } = useBalance({ address: address, chainId: 1979 })
-  const displayBalance = balanceData ? parseFloat(balanceData.formatted).toFixed(4) : '0.0000'
+  const displayBalance = balanceData ? (Number(balanceData.value) / 1e18).toFixed(4) : '0.0000'
 
   // Dynamically pixelated map
   const [pixelatedMapUrl, setPixelatedMapUrl] = useState<string>('')
