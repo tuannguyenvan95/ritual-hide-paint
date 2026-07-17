@@ -1236,8 +1236,8 @@ function GameContent() {
                           ))}
                       </div>
                       <div 
-                        className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl aspect-square max-w-[360px] mx-auto mt-2 cursor-pointer group" 
-                        style={{ imageRendering: 'pixelated' }}
+                        className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl mx-auto mt-2 cursor-pointer group" 
+                        style={{ width: 'min(100%, 55vh)', height: 'min(100%, 55vh)', imageRendering: 'pixelated' }}
                         onClick={() => { setShowFullMap(true); playSound('click') }}
                       >
                         {pixelatedMapUrl && <img src={pixelatedMapUrl} alt="Map Preview" className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />}
