@@ -540,9 +540,9 @@ function GameContent() {
             </div>
           </div>
 
-          <div className="w-full max-w-[380px] flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1">
+          <div className="w-full max-w-[380px] flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1 h-full">
             {mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'ready' || gameStatus === 'finished') && (
-              <div className="bg-slate-800/80 p-4 md:p-5 rounded-2xl border border-slate-700 shadow-xl backdrop-blur-md">
+              <div className="bg-slate-800/80 p-4 md:p-5 rounded-2xl border border-slate-700 shadow-xl backdrop-blur-md flex flex-col h-full">
                 <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Brush className="text-ritual-primary"/> Character Camouflage</h3>
                 
                 <div className="flex gap-2 mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700">
@@ -613,7 +613,7 @@ function GameContent() {
                   <button 
                     onClick={confirmHideAndBotSeek}
                     disabled={txPending}
-                    className="w-full py-4 rounded-xl font-bold text-lg shadow-xl bg-gradient-to-r from-ritual-primary to-ritual-accent text-white hover:-translate-y-1 transition-all"
+                    className="mt-auto w-full py-4 rounded-xl font-bold text-lg shadow-xl bg-gradient-to-r from-ritual-primary to-ritual-accent text-white hover:-translate-y-1 transition-all"
                   >
                     {txPending ? 'Staking...' : 'Confirm Disguise'}
                   </button>
