@@ -58,7 +58,7 @@ function GameContent() {
   
   const [inGame, setInGame] = useState(false)
   const [grid, setGrid] = useState<number[]>(Array(100).fill(0))
-  const [hiddenIndex, setHiddenIndex] = useState<number | null>(null)
+  const [hiddenPosition, setHiddenPosition] = useState<{x: number, y: number} | null>(null)
   const [gameStatus, setGameStatus] = useState<'waiting' | 'painting' | 'ready' | 'finished'>('waiting')
   
   const [paintColor, setPaintColor] = useState('#8b5cf6')
@@ -180,7 +180,7 @@ function GameContent() {
     if (!mode || !isConnected) return
     setInGame(true)
     setGrid(Array(100).fill(0))
-    setHiddenIndex(null)
+    setHiddenPosition(null)
     setGameStatus('waiting')
     setBotMessage('')
   }
@@ -189,20 +189,10 @@ function GameContent() {
     if (gameStatus === 'finished') return
     if (activeTool === 'picker' && mode === 'hider') return
 
-    if (mode === 'hider') {
-      if (gameStatus === 'ready') return 
-      setHiddenIndex(index)
-      if (gameStatus === 'waiting') setGameStatus('painting')
-    } else {
+    if (mode === 'seeker') {
       if (gameStatus === 'waiting' || opponent === 'bot') return 
       const newGrid = [...grid]
-      if (index === hiddenIndex) {
-        newGrid[index] = 2 
-        setGameStatus('finished')
-        alert("You found it! You win the pot!")
-      } else {
-        newGrid[index] = 1 
-      }
+      newGrid[index] = 1 
       setGrid(newGrid)
     }
   }
@@ -222,7 +212,7 @@ function GameContent() {
   }
 
   const pickColorFromBackground = (idx: number) => {
-    if (!hiddenCanvasRef.current || hiddenIndex === null || !pixelatedMapUrl) return
+    if (!hiddenCanvasRef.current || hiddenPosition === null || !pixelatedMapUrl) return
     
     const canvas = hiddenCanvasRef.current
     const ctx = canvas.getContext('2d')
@@ -235,16 +225,14 @@ function GameContent() {
       canvas.height = 160
       ctx.drawImage(img, 0, 0)
       
-      const cellWidth = 16
-      const cellHeight = 16
-      const cellX = hiddenIndex % 10
-      const cellY = Math.floor(hiddenIndex / 10)
+      const cellX = hiddenPosition.x
+      const cellY = hiddenPosition.y
       
       const pxX = idx % 16
       const pxY = Math.floor(idx / 16)
       
-      const sampleX = cellX * cellWidth + pxX
-      const sampleY = cellY * cellHeight + pxY
+      const sampleX = cellX + pxX
+      const sampleY = cellY + pxY
       
       const imgData = ctx.getImageData(sampleX, sampleY, 1, 1)
       const [r, g, b] = imgData.data
@@ -273,26 +261,39 @@ function GameContent() {
   }
 
   const handleMapMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    const scaleX = 160 / rect.width
+    const scaleY = 160 / rect.height
+    
+    const pxX = Math.floor(x * scaleX)
+    const pxY = Math.floor(y * scaleY)
+
     if (activeTool === 'picker' && mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'waiting')) {
-      const rect = e.currentTarget.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-      
-      const scaleX = 160 / rect.width
-      const scaleY = 160 / rect.height
-      
-      const pxX = Math.floor(x * scaleX)
-      const pxY = Math.floor(y * scaleY)
-      
       pickColorFromGlobalXY(pxX, pxY)
       setActiveTool('brush')
+      e.stopPropagation()
+      e.preventDefault()
+    } else if (mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'waiting')) {
+      if (hiddenPosition) {
+        const inCharBounds = pxX >= hiddenPosition.x && pxX < hiddenPosition.x + 16 &&
+                             pxY >= hiddenPosition.y && pxY < hiddenPosition.y + 16
+        if (inCharBounds && gameStatus === 'painting') return
+      }
+      
+      const charX = Math.max(0, Math.min(160 - 16, Math.floor(pxX - 8)))
+      const charY = Math.max(0, Math.min(160 - 16, Math.floor(pxY - 8)))
+      setHiddenPosition({ x: charX, y: charY })
+      if (gameStatus === 'waiting') setGameStatus('painting')
       e.stopPropagation()
       e.preventDefault()
     }
   }
 
   const confirmHideAndBotSeek = async () => {
-    if (hiddenIndex === null) return
+    if (hiddenPosition === null) return
     setGameStatus('ready')
     setTxPending(true)
     
@@ -308,7 +309,7 @@ function GameContent() {
     setBotMessage("Bot AI is scanning the environment pixels...")
     
     setTimeout(() => {
-      if (hiddenCanvasRef.current && hiddenIndex !== null && pixelatedMapUrl) {
+      if (hiddenCanvasRef.current && hiddenPosition !== null && pixelatedMapUrl) {
         const canvas = hiddenCanvasRef.current
         const ctx = canvas.getContext('2d')
         if (ctx) {
@@ -319,12 +320,7 @@ function GameContent() {
             canvas.height = 160
             ctx.drawImage(img, 0, 0)
             
-            const cellWidth = 16
-            const cellHeight = 16
-            const x = hiddenIndex % 10
-            const y = Math.floor(hiddenIndex / 10)
-            
-            const imgData = ctx.getImageData(x * cellWidth, y * cellHeight, cellWidth, cellHeight)
+            const imgData = ctx.getImageData(hiddenPosition.x, hiddenPosition.y, 16, 16)
             const data = imgData.data
             
             let r = 0, g = 0, b = 0
@@ -415,27 +411,44 @@ function GameContent() {
             >
               {pixelatedMapUrl && <img ref={imgRef} src={pixelatedMapUrl} alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none" />}
               
-              <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 gap-0">
-                {grid.map((cellState, index) => (
-                  <div 
-                    key={index}
-                    onClick={() => handleCellClick(index)}
-                    className={`
-                      border border-white/10 hover:border-white/50 hover:bg-white/10 cursor-pointer transition-all flex items-center justify-center
-                      ${hiddenIndex === index ? 'bg-black/10 border-ritual-primary ring-2 ring-ritual-primary ring-inset backdrop-blur-sm' : ''}
-                      ${cellState === 2 ? 'bg-red-500/50 backdrop-blur-sm' : ''}
-                    `}
-                  >
-                    {hiddenIndex === index && gameStatus !== 'waiting' && (
-                      <div className="w-full h-full grid grid-cols-16 grid-rows-16 shadow-2xl drop-shadow-2xl" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
-                         {characterPixels.map((color, i) => (
-                           <div key={i} style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} className="w-full h-full"></div>
-                         ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {mode !== 'hider' && (
+                <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 gap-0">
+                  {grid.map((cellState, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => handleCellClick(index)}
+                      className={`
+                        border border-white/10 hover:border-white/50 hover:bg-white/10 cursor-pointer transition-all flex items-center justify-center
+                        ${cellState === 2 ? 'bg-red-500/50 backdrop-blur-sm' : ''}
+                      `}
+                    ></div>
+                  ))}
+                </div>
+              )}
+
+              {mode === 'hider' && hiddenPosition && gameStatus !== 'waiting' && (
+                <div 
+                  className="absolute z-10 grid shadow-[0_0_20px_rgba(0,0,0,0.8)] border border-white/20"
+                  style={{ 
+                    left: `${(hiddenPosition.x / 160) * 100}%`,
+                    top: `${(hiddenPosition.y / 160) * 100}%`,
+                    width: '10%',
+                    height: '10%',
+                    gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', 
+                    gridTemplateRows: 'repeat(16, minmax(0, 1fr))' 
+                  }}
+                >
+                   {characterPixels.map((color, i) => (
+                     <div 
+                       key={i} 
+                       onMouseDown={() => handlePaintPixel(i)}
+                       onMouseEnter={(e) => { if(e.buttons===1) handlePaintPixel(i) }}
+                       style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} 
+                       className="w-full h-full"
+                     ></div>
+                   ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -474,13 +487,13 @@ function GameContent() {
                 </div>
 
                 <div className="relative w-full aspect-square rounded-xl border-2 border-slate-600 overflow-hidden mb-6 shadow-inner bg-slate-900" style={{ imageRendering: 'pixelated' }}>
-                  {hiddenIndex !== null && pixelatedMapUrl && (
+                  {hiddenPosition !== null && pixelatedMapUrl && (
                      <div 
                        className="absolute inset-0 opacity-60 pointer-events-none"
                        style={{
                          backgroundImage: `url(${pixelatedMapUrl})`,
                          backgroundSize: '1000% 1000%', 
-                         backgroundPosition: `${(hiddenIndex % 10) * 11.11}% ${Math.floor(hiddenIndex / 10) * 11.11}%`
+                         backgroundPosition: `${(hiddenPosition.x / 144) * 100}% ${(hiddenPosition.y / 144) * 100}%`
                        }}
                      />
                   )}
@@ -952,13 +965,24 @@ function GameContent() {
                       </div>
                       <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/30">
                         <p className="text-xs font-bold text-slate-500 mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>YOUR CHARACTER</p>
-                        <div className="w-24 h-24 mx-auto rounded-lg border border-slate-600 overflow-hidden bg-slate-800" style={{ imageRendering: 'pixelated' }}>
-                          <div className="w-full h-full grid" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
-                            {characterPixels.map((color, i) => (
-                              <div key={i} style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} className="w-full h-full"></div>
-                            ))}
-                          </div>
-                        </div>
+                                  {hiddenPosition !== null && pixelatedMapUrl && (
+                    <div className="w-24 h-24 rounded-lg border border-slate-600 overflow-hidden relative shadow-inner">
+                      <div 
+                         className="absolute w-[1000%] h-[1000%]"
+                         style={{
+                           backgroundImage: `url(${pixelatedMapUrl})`,
+                           backgroundSize: '100% 100%',
+                           backgroundPosition: `${(hiddenPosition.x / 144) * 100}% ${(hiddenPosition.y / 144) * 100}%`,
+                           imageRendering: 'pixelated'
+                         }}
+                      />
+                      <div className="absolute inset-0 grid" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
+                        {characterPixels.map((color, i) => (
+                           <div key={i} style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} className="w-full h-full"></div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                         <p className="text-[10px] text-slate-500 text-center mt-2">Current look (pre-camouflage)</p>
                       </div>
                       <div className="bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/15">
