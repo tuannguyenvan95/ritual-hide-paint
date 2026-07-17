@@ -587,17 +587,7 @@ function GameContent() {
               </div>
             )}
 
-            {opponent === 'bot' && (
-              <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-xl backdrop-blur-md flex-1">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Bot className="text-ritual-accent"/> AI Seeker Status</h3>
-                <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 min-h-[150px] flex items-center justify-center font-mono text-sm text-slate-300 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-2 opacity-10"><Bot size={80} /></div>
-                  <p className="relative z-10 text-center leading-relaxed px-4">
-                    {botMessage || "Waiting for you to hide..."}
-                  </p>
-                </div>
-              </div>
-            )}
+
           </div>
         </main>
         </div>
