@@ -65,9 +65,17 @@ function GameContent() {
   const [paintColor, setPaintColor] = useState('#8b5cf6')
   const [activeTool, setActiveTool] = useState<'brush' | 'eraser' | 'picker' | 'move'>('brush')
   const [isDragging, setIsDragging] = useState(false)
-  const [characterPixels, setCharacterPixels] = useState<string[]>(
-    CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent')
-  ) 
+  const [characterPixels, setCharacterPixels] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('ritual_char_global')
+      if (saved) return JSON.parse(saved)
+    } catch(e) {}
+    return CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent')
+  }) 
+
+  useEffect(() => {
+    localStorage.setItem('ritual_char_global', JSON.stringify(characterPixels))
+  }, [characterPixels])
   
   const imgRef = useRef<HTMLImageElement>(null)
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
