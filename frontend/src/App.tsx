@@ -511,4 +511,14 @@ function GameContent() {
   )
 }
 
+function App() {
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <GameContent />
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
+}
+
 export default App
