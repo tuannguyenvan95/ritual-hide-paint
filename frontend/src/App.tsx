@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
+import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance, useSignMessage } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
 import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette, Move, Trophy, AlertCircle, Timer } from 'lucide-react'
@@ -49,8 +49,9 @@ const CHARACTER_MASK = [
 
 function GameContent() {
   const { address, isConnected } = useAccount()
-  const { connectors, connect } = useConnect()
+  const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
+  const { signMessageAsync } = useSignMessage()
 
   const [mode, setMode] = useState<'hider' | 'seeker' | null>(null)
   const [opponent, setOpponent] = useState<'bot' | 'pvp'>('bot')
@@ -235,17 +236,29 @@ function GameContent() {
   const startGame = async () => {
     if (!mode || !isConnected) return
     
-    setIsConfirmingTx(true)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsConfirmingTx(false)
+    try {
+      setIsConfirmingTx(true)
+      playSound('click')
+      
+      if (Number(betAmount) > 0) {
+        await signMessageAsync({ message: `Ritual Hide & Paint\n\nAction: Deposit Wager & Start Game\nMode: ${mode}\nBet: ${betAmount} RITUAL\nMap: ${mapNames[map]}` })
+      } else {
+        await signMessageAsync({ message: `Ritual Hide & Paint\n\nAction: Start Free Game\nMode: ${mode}\nMap: ${mapNames[map]}` })
+      }
+      
+      setIsConfirmingTx(false)
 
-    if (opponent === 'pvp') {
-      setIsMatchmaking(true)
-      setMatchmakeTimer(5)
-      return
+      if (opponent === 'pvp') {
+        setIsMatchmaking(true)
+        setMatchmakeTimer(5)
+        return
+      }
+      playSound('start')
+      enterGameSession()
+    } catch (error) {
+      console.error("User rejected transaction/signature:", error)
+      setIsConfirmingTx(false)
     }
-    playSound('start')
-    enterGameSession()
   }
 
   useEffect(() => {
