@@ -1276,9 +1276,8 @@ function GameContent() {
                         ))}
                       </div>
                     </div>
-                          </div>
-                        )}
-                        </div>
+                  )}
+                </div>
                         <p className="text-[10px] text-slate-500 text-center mt-2">Current look (pre-camouflage)</p>
                       </div>
                       <div className="bg-yellow-500/5 p-3 rounded-xl border border-yellow-500/15">
