@@ -76,7 +76,7 @@ function GameContent() {
   const [playerName, setPlayerName] = useState('')
   const [nameSet, setNameSet] = useState(false)
   const [setupTab, setSetupTab] = useState<'config' | 'character' | 'preview'>('config')
-  const [betAmount, setBetAmount] = useState<number>(10)
+  const [betAmount, setBetAmount] = useState<number | string>(1)
 
   // Fetch native token balance on Ritual Testnet
   const { data: balanceData } = useBalance({ address: address, chainId: 1979 })
@@ -747,19 +747,30 @@ function GameContent() {
                     {/* Betting Amount */}
                     <div>
                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
-                        <Wallet className="text-ritual-gold" size={18}/> WAGER AMOUNT
+                        <Wallet className="text-ritual-gold" size={18}/> WAGER AMOUNT (RITUAL)
                       </h3>
-                      <div className="flex gap-2">
-                        {[10, 50, 100].map(amount => (
-                          <button
-                            key={amount}
-                            onClick={() => { setBetAmount(amount); playSound('click') }}
-                            onMouseEnter={() => playSound('hover')}
-                            className={`flex-1 py-3 rounded-xl font-bold border-2 transition-all ${betAmount === amount ? 'border-ritual-gold bg-ritual-gold/10 text-ritual-gold shadow-lg shadow-ritual-gold/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
-                          >
-                            {amount}
-                          </button>
-                        ))}
+                      <div className="flex gap-2 relative">
+                        <input
+                          type="number"
+                          min="0.001"
+                          step="0.01"
+                          value={betAmount}
+                          onChange={(e) => setBetAmount(e.target.value ? Number(e.target.value) : '')}
+                          className="w-full bg-slate-900/50 border-2 border-slate-700/50 focus:border-ritual-gold rounded-xl py-3 px-4 text-ritual-gold font-bold focus:outline-none transition-all focus:shadow-lg focus:shadow-ritual-gold/10 text-lg"
+                          placeholder="Enter amount..."
+                        />
+                        <button 
+                          onClick={() => {
+                            // Set to half their balance or max balance
+                            if (balanceData) {
+                               const max = Number(balanceData.value) / 1e18;
+                               setBetAmount(Math.floor(max * 100) / 100);
+                            }
+                          }}
+                          className="px-4 py-3 bg-slate-800 text-ritual-gold font-bold text-sm rounded-xl border border-slate-700 hover:bg-slate-700 transition-colors"
+                        >
+                          MAX
+                        </button>
                       </div>
                       <p className="text-xs text-slate-500 mt-2 text-center">Stake RITUAL tokens to play. Winner takes all!</p>
                     </div>
