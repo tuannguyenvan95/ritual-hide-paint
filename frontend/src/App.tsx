@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
-import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette, Move, Trophy, AlertCircle } from 'lucide-react'
+import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette, Move, Trophy, AlertCircle, Timer } from 'lucide-react'
 
 import forestMap from './assets/forest_map.jpg'
 import cityMap from './assets/city_map.jpg'
@@ -86,11 +86,12 @@ function GameContent() {
   const [playerName, setPlayerName] = useState('')
   const [nameSet, setNameSet] = useState(false)
   const [setupTab, setSetupTab] = useState<'config' | 'character' | 'preview'>('config')
-  const [betAmount, setBetAmount] = useState<number | string>(1)
+  const [betAmount, setBetAmount] = useState<number | string>(0)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [leaderboard, setLeaderboard] = useState<{name: string, wins: number}[]>([])
   const [isMatchmaking, setIsMatchmaking] = useState(false)
   const [matchmakeTimer, setMatchmakeTimer] = useState(0)
+  const [gameTimer, setGameTimer] = useState(30)
 
   useEffect(() => {
     const saved = localStorage.getItem('ritual_leaderboard')
@@ -227,6 +228,7 @@ function GameContent() {
     setGrid(Array(100).fill(0))
     setHiddenPosition(null)
     setGameStatus('waiting')
+    setGameTimer(30)
   }, [])
 
   const startGame = () => {
@@ -253,6 +255,32 @@ function GameContent() {
     }
     return () => clearInterval(interval)
   }, [isMatchmaking, matchmakeTimer, enterGameSession, playSound])
+
+  useEffect(() => {
+    let interval: any
+    if (inGame && (gameStatus === 'painting' || gameStatus === 'waiting' || gameStatus === 'seeking') && gameTimer > 0) {
+      interval = setInterval(() => {
+        setGameTimer(prev => prev - 1)
+      }, 1000)
+    } 
+    return () => clearInterval(interval)
+  }, [inGame, gameStatus, gameTimer])
+
+  useEffect(() => {
+    if (inGame && gameTimer === 0) {
+      if (mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'waiting')) {
+         if (hiddenPosition === null) {
+            setGameResult('loss')
+            setGameStatus('finished')
+         } else {
+            confirmHideAndBotSeek()
+         }
+      } else if (mode === 'seeker' && gameStatus === 'seeking') {
+         setGameResult('loss')
+         setGameStatus('finished')
+      }
+    }
+  }, [gameTimer, inGame, gameStatus, hiddenPosition, mode])
 
   const handleCellClick = (index: number) => {
     if (gameStatus === 'finished') return
@@ -474,6 +502,12 @@ function GameContent() {
             <p className="text-slate-400 text-sm">Mode: <span className="text-white capitalize font-semibold">{mode} (vs {opponent})</span> | Map: <span className="text-white font-semibold">{mapNames[map]}</span></p>
           </div>
           <div className="flex items-center gap-4">
+            {(gameStatus === 'painting' || gameStatus === 'waiting' || gameStatus === 'seeking') && (
+              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 px-4 py-2 rounded-lg">
+                <Timer size={16} className="text-red-400" />
+                <span className="text-red-400 font-bold">{gameTimer}s</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 bg-ritual-gold/10 border border-ritual-gold/30 px-4 py-2 rounded-lg">
               <span className="text-ritual-gold font-bold">{betAmount} RITUAL</span>
               <span className="text-slate-400 text-xs uppercase tracking-wider">Pot</span>
