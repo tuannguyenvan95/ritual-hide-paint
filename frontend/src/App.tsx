@@ -869,7 +869,7 @@ function GameContent() {
               {/* TAB 1: Game Config */}
               {setupTab === 'config' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
-                  <div className="space-y-7">
+                  <div className="space-y-7 flex flex-col h-full">
                     {/* Opponent */}
                     <div>
                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
@@ -915,6 +915,24 @@ function GameContent() {
                           🔍 <span className="text-sm">Seeker</span>
                         </button>
                       </div>
+                    </div>
+
+                    {/* Project Links */}
+                    <div className="pt-2 mt-auto pb-2">
+                      <h3 className="text-sm font-bold mb-3 flex items-center gap-2 text-slate-500 tracking-wider" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem' }}>
+                        COMMUNITY
+                      </h3>
+                      <div className="flex gap-3">
+                        <a href="https://discord.gg/ritual" target="_blank" rel="noopener noreferrer" className="flex-1 py-3 rounded-xl font-bold border-2 border-slate-700/50 text-slate-400 hover:border-indigo-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all text-center flex items-center justify-center gap-2 text-xs">
+                           Discord
+                        </a>
+                        <a href="https://twitter.com/ritualnet" target="_blank" rel="noopener noreferrer" className="flex-1 py-3 rounded-xl font-bold border-2 border-slate-700/50 text-slate-400 hover:border-sky-400 hover:text-sky-400 hover:bg-sky-400/10 transition-all text-center flex items-center justify-center gap-2 text-xs">
+                           X (Twitter)
+                        </a>
+                      </div>
+                      <a href="https://ritual.net" target="_blank" rel="noopener noreferrer" className="mt-3 block w-full py-3 rounded-xl font-bold border-2 border-slate-700/50 text-slate-400 hover:border-slate-500 hover:text-white hover:bg-slate-800 transition-all text-center text-xs">
+                        ritual.net
+                      </a>
                     </div>
                   </div>
 
@@ -1124,7 +1142,7 @@ function GameContent() {
 
         {/* Footer */}
         <div className="text-center mt-8 text-slate-600 text-xs" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '8px', letterSpacing: '0.1em' }}>
-          POWERED BY RITUAL NETWORK • BUILT WITH AI
+          POWERED BY RITUAL NETWORK
         </div>
       </div>
     </div>
