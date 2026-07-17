@@ -1157,15 +1157,15 @@ function GameContent() {
 
               {/* TAB 2: Character Preview & Creation */}
               {setupTab === 'character' && (
-                <div className="animate-fade-in">
-                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                <div className="animate-fade-in flex flex-col h-full">
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
                     <Palette className="text-ritual-primary" size={18}/> YOUR CHARACTER
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Character pixel editor */}
                     <div>
-                      <p className="text-slate-400 text-sm mb-4">This is your base character. You'll paint over it during the game to blend with the map. Try some colors now!</p>
-                      <div className="relative w-full max-w-[320px] aspect-square rounded-xl border-2 border-slate-600 overflow-hidden shadow-inner bg-slate-900 mx-auto" style={{ imageRendering: 'pixelated' }}>
+                      <p className="text-slate-400 text-xs mb-3">This is your base character. You'll paint over it during the game to blend with the map. Try some colors now!</p>
+                      <div className="relative w-full max-w-[280px] aspect-square rounded-xl border-2 border-slate-600 overflow-hidden shadow-inner bg-slate-900 mx-auto" style={{ imageRendering: 'pixelated' }}>
                         <div className="absolute inset-0 bg-[repeating-conic-gradient(rgba(255,255,255,0.03)_0%_25%,transparent_0%_50%)] bg-[length:20px_20px]"></div>
                         <div className="absolute inset-0 grid z-10" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
                           {characterPixels.map((color, i) => (
@@ -1181,13 +1181,13 @@ function GameContent() {
                       </div>
                     </div>
                     {/* Color palette quick picks */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-xs text-slate-500 mb-2 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>PICK COLOR</p>
+                        <p className="text-[10px] text-slate-500 mb-1 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>PICK COLOR</p>
                         <input type="color" value={paintColor} onChange={(e) => setPaintColor(e.target.value)} className="w-full h-12 rounded-lg cursor-pointer border-2 border-slate-600 bg-slate-900" />
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500 mb-2 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>QUICK PALETTE</p>
+                        <p className="text-[10px] text-slate-500 mb-1 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>QUICK PALETTE</p>
                         <div className="grid grid-cols-8 gap-1.5">
                           {['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#ffffff','#94a3b8','#64748b','#334155','#1e293b','#0f172a','#7c3aed','#14b8a6'].map(c => (
                             <button key={c} onClick={() => { setPaintColor(c); playSound('click') }} className={`w-full aspect-square rounded-md border-2 transition-all hover:scale-110 ${paintColor === c ? 'border-white shadow-lg' : 'border-slate-700'}`} style={{ backgroundColor: c }} />
@@ -1195,14 +1195,14 @@ function GameContent() {
                         </div>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500 mb-2 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>ACTIONS</p>
+                        <p className="text-[10px] text-slate-500 mb-1 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>ACTIONS</p>
                         <div className="flex gap-2">
                           <button onClick={() => { setCharacterPixels(CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent')); playSound('click') }} className="flex-1 py-2.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold border border-slate-700 transition-all">Reset</button>
                           <button onClick={() => { setCharacterPixels(CHARACTER_MASK.map(m => m === 1 ? paintColor : 'transparent')); playSound('click') }} className="flex-1 py-2.5 rounded-lg bg-ritual-primary/20 text-ritual-primary hover:bg-ritual-primary/30 text-xs font-bold border border-ritual-primary/30 transition-all">Fill All</button>
                         </div>
                       </div>
-                      <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/30 mt-4">
-                        <p className="text-xs text-slate-400 leading-relaxed">💡 <strong className="text-slate-300">Tip:</strong> During the actual game, you'll use the Eyedropper tool to pick exact colors from the map background. This is just a practice area!</p>
+                      <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-700/30 mt-2">
+                        <p className="text-[10px] text-slate-400 leading-relaxed">💡 <strong className="text-slate-300">Tip:</strong> During the actual game, you'll use the Eyedropper tool to pick exact colors from the map background. This is just a practice area!</p>
                       </div>
                     </div>
                   </div>
@@ -1211,29 +1211,29 @@ function GameContent() {
 
               {/* TAB 3: Map Preview */}
               {setupTab === 'preview' && (
-                <div className="animate-fade-in">
-                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                <div className="animate-fade-in flex flex-col h-full">
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2 shrink-0" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
                     <Eye className="text-ritual-accent" size={18}/> MAP PREVIEW — {mapNames[map].toUpperCase()}
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
                     {/* Full map preview */}
-                    <div className="md:col-span-2">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-slate-400 text-sm">Select a map to preview its layout and plan your camouflage.</p>
-                        <div className="flex gap-2">
-                          {mapNames.map((m, idx) => (
+                    <div className="md:col-span-2 flex flex-col">
+                      <div className="flex items-center justify-between mb-2 shrink-0">
+                        <p className="text-slate-400 text-xs">Select a map to preview its layout and plan your camouflage.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mb-2 shrink-0">
+                        {mapNames.map((m, idx) => (
                             <button 
                               key={idx}
                               onClick={() => { setMap(idx); playSound('click') }}
-                              className={`w-10 h-10 rounded-md border-2 overflow-hidden transition-all hover:scale-105 ${map === idx ? 'border-ritual-accent shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'border-slate-700/50 hover:border-slate-500 opacity-50 hover:opacity-100'}`}
+                              className={`w-8 h-8 rounded-md border-2 overflow-hidden transition-all hover:scale-105 ${map === idx ? 'border-ritual-accent shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'border-slate-700/50 hover:border-slate-500 opacity-50 hover:opacity-100'}`}
                               title={m}
                             >
                               <img src={mapImages[idx]} alt={m} className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} />
                             </button>
                           ))}
-                        </div>
                       </div>
-                      <div className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl aspect-square max-w-[500px]" style={{ imageRendering: 'pixelated' }}>
+                      <div className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl aspect-square max-w-[360px] mx-auto mt-2" style={{ imageRendering: 'pixelated' }}>
                         {pixelatedMapUrl && <img src={pixelatedMapUrl} alt="Map Preview" className="w-full h-full object-cover" />}
                         <div className="absolute inset-0 grid grid-cols-10 grid-rows-10">
                           {Array(100).fill(0).map((_, i) => (
@@ -1246,9 +1246,9 @@ function GameContent() {
                       </div>
                     </div>
                     {/* Map info sidebar */}
-                    <div className="space-y-4">
-                      <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/30">
-                        <p className="text-xs font-bold text-slate-500 mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>MAP INFO</p>
+                    <div className="space-y-3">
+                      <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-700/30">
+                        <p className="text-[10px] font-bold text-slate-500 mb-1" style={{ fontFamily: "'Orbitron', sans-serif" }}>MAP INFO</p>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between"><span className="text-slate-400">Name</span><span className="text-white font-bold">{mapNames[map]}</span></div>
                           <div className="flex justify-between"><span className="text-slate-400">Difficulty</span><span className={`font-bold ${mapDiffColors[map].split(' ')[0]}`}>{mapDifficulties[map]}</span></div>
@@ -1256,8 +1256,9 @@ function GameContent() {
                           <div className="flex justify-between"><span className="text-slate-400">Resolution</span><span className="text-white font-bold">160 × 160 px</span></div>
                         </div>
                       </div>
-                      <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/30">
-                        <p className="text-xs font-bold text-slate-500 mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>YOUR CHARACTER</p>
+                      <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-700/30">
+                        <p className="text-[10px] font-bold text-slate-500 mb-1" style={{ fontFamily: "'Orbitron', sans-serif" }}>YOUR CHARACTER</p>
+                        <div className="flex justify-center mt-2">
                                   {hiddenPosition !== null && pixelatedMapUrl && (
                     <div className="w-24 h-24 rounded-lg border border-slate-600 overflow-hidden relative shadow-inner">
                       <div 
@@ -1275,11 +1276,13 @@ function GameContent() {
                         ))}
                       </div>
                     </div>
-                  )}
+                          </div>
+                        )}
+                        </div>
                         <p className="text-[10px] text-slate-500 text-center mt-2">Current look (pre-camouflage)</p>
                       </div>
-                      <div className="bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/15">
-                        <p className="text-xs text-yellow-400/80 leading-relaxed">🎯 <strong>Strategy:</strong> Observe the dominant colors in your chosen cell. In-game, use the Eyedropper to match them exactly!</p>
+                      <div className="bg-yellow-500/5 p-3 rounded-xl border border-yellow-500/15">
+                        <p className="text-[10px] text-yellow-400/80 leading-relaxed">🎯 <strong>Strategy:</strong> Observe the dominant colors in your chosen cell. In-game, use the Eyedropper to match them exactly!</p>
                       </div>
                     </div>
                   </div>
