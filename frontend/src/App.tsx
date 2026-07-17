@@ -81,6 +81,7 @@ function GameContent() {
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const [txPending, setTxPending] = useState(false)
+  const [isConfirmingTx, setIsConfirmingTx] = useState(false)
 
   const [showWalletModal, setShowWalletModal] = useState(false)
   const [playerName, setPlayerName] = useState('')
@@ -231,13 +232,19 @@ function GameContent() {
     setGameTimer(60)
   }, [])
 
-  const startGame = () => {
+  const startGame = async () => {
     if (!mode || !isConnected) return
+    
+    setIsConfirmingTx(true)
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    setIsConfirmingTx(false)
+
     if (opponent === 'pvp') {
       setIsMatchmaking(true)
       setMatchmakeTimer(5)
       return
     }
+    playSound('start')
     enterGameSession()
   }
 
@@ -1078,13 +1085,13 @@ function GameContent() {
 
                     {/* Start Button */}
                     <button 
-                      onClick={() => { if (nameSet) { startGame(); playSound('start') } else { playSound('click'); setSetupTab('config') } }}
+                      onClick={() => { if (nameSet) { startGame() } else { playSound('click'); setSetupTab('config') } }}
                       onMouseEnter={() => playSound('hover')}
-                      disabled={!mode || !nameSet || hasInsufficientBalance || Number(betAmount) <= 0}
-                      className={`glow-btn w-full mt-auto py-5 rounded-xl font-extrabold text-lg transition-all transform shadow-xl relative z-10 ${mode && nameSet ? 'bg-gradient-to-r from-ritual-primary via-purple-500 to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/50'}`}
+                      disabled={!mode || !nameSet || hasInsufficientBalance || Number(betAmount) < 0 || isConfirmingTx}
+                      className={`glow-btn w-full mt-auto py-5 rounded-xl font-extrabold text-lg transition-all transform shadow-xl relative z-10 ${mode && nameSet && !isConfirmingTx ? 'bg-gradient-to-r from-ritual-primary via-purple-500 to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/50'}`}
                       style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: '0.1em' }}
                     >
-                      {!nameSet ? 'SET YOUR NAME FIRST' : mode ? '▶ START GAME' : 'SELECT A ROLE'}
+                      {isConfirmingTx ? 'PAYING GAS...' : (!nameSet ? 'SET YOUR NAME FIRST' : mode ? '▶ START GAME' : 'SELECT A ROLE')}
                     </button>
                   </div>
                 </div>
