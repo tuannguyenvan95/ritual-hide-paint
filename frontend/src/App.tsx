@@ -109,13 +109,13 @@ function GameContent() {
   }
 
   const handlePaintPixel = (idx: number) => {
-    if (CHARACTER_MASK[idx] === 0) return // Cannot paint outside character body
-
     if (activeTool === 'picker') {
       pickColorFromBackground(idx)
       setActiveTool('brush')
       return
     }
+
+    if (CHARACTER_MASK[idx] === 0) return // Cannot paint outside character body
 
     const newPixels = [...characterPixels]
     newPixels[idx] = activeTool === 'eraser' ? 'transparent' : paintColor
