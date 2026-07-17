@@ -1236,8 +1236,8 @@ function GameContent() {
                           ))}
                       </div>
                       <div 
-                        className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl mx-auto mt-2 cursor-pointer group" 
-                        style={{ width: 'min(100%, 55vh)', height: 'min(100%, 55vh)', imageRendering: 'pixelated' }}
+                        className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl mx-auto mt-2 cursor-pointer group w-full aspect-square" 
+                        style={{ imageRendering: 'pixelated' }}
                         onClick={() => { setShowFullMap(true); playSound('click') }}
                       >
                         {pixelatedMapUrl && <img src={pixelatedMapUrl} alt="Map Preview" className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />}
@@ -1334,7 +1334,7 @@ function GameContent() {
             >
               <X size={24} />
             </button>
-            <div className="relative rounded-2xl overflow-hidden border-4 border-slate-700 shadow-2xl shadow-ritual-primary/20 flex-shrink-0" style={{ width: 'min(75vh, 90vw)', height: 'min(75vh, 90vw)', imageRendering: 'pixelated' }}>
+            <div className="relative rounded-2xl overflow-hidden border-4 border-slate-700 shadow-2xl shadow-ritual-primary/20 flex-shrink-0" style={{ width: 'min(98vh, 98vw)', height: 'min(98vh, 98vw)', imageRendering: 'pixelated' }}>
               <img src={pixelatedMapUrl} alt="Full Map" className="w-full h-full object-cover" />
               <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 pointer-events-none">
                 {Array(100).fill(0).map((_, i) => (
