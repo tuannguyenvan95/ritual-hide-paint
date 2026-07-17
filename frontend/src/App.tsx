@@ -1013,7 +1013,7 @@ function GameContent() {
                           onMouseEnter={() => playSound('hover')}
                           className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'bot' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
                         >
-                          <Bot className="mx-auto mb-2" size={22} /> <span className="text-sm">vs AI Bot</span>
+                          <Bot className="mx-auto mb-2" size={22} /> <span className="text-sm">AI Bot</span>
                         </button>
                         <button 
                           onClick={() => { setOpponent('pvp'); playSound('click') }}
