@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
+import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
-import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette } from 'lucide-react'
+import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette } from 'lucide-react'
 
 import forestMap from './assets/forest_map.jpg'
 import cityMap from './assets/city_map.jpg'
@@ -73,6 +73,14 @@ function GameContent() {
   const [txPending, setTxPending] = useState(false)
   const [botMessage, setBotMessage] = useState('')
   const [showWalletModal, setShowWalletModal] = useState(false)
+  const [playerName, setPlayerName] = useState('')
+  const [nameSet, setNameSet] = useState(false)
+  const [showMapPreview, setShowMapPreview] = useState(false)
+  const [setupTab, setSetupTab] = useState<'config' | 'character' | 'preview'>('config')
+
+  // Fetch native token balance on Ritual Testnet
+  const { data: balanceData } = useBalance({ address: address, chainId: 1979 })
+  const displayBalance = balanceData ? parseFloat(balanceData.formatted).toFixed(4) : '0.0000'
 
   // Dynamically pixelated map
   const [pixelatedMapUrl, setPixelatedMapUrl] = useState<string>('')
@@ -571,109 +579,281 @@ function GameContent() {
           </div>
         ) : (
           /* ===== CONNECTED: GAME SETUP ===== */
-          <div className="game-card rounded-3xl p-8 md:p-10 animate-fade-in-up relative overflow-hidden">
-            {/* Top glow line */}
-            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-accent/40 to-transparent"></div>
+          <div className="animate-fade-in-up space-y-6">
+            {/* ===== TOP BAR: Wallet + Balance + Player Name ===== */}
+            <div className="game-card rounded-2xl p-5 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-accent/40 to-transparent"></div>
+              <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                {/* Wallet */}
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-ritual-primary to-ritual-accent flex items-center justify-center shadow-lg shadow-ritual-primary/20">
+                    <span className="text-white text-xs font-bold">{address?.slice(2, 4)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-300 font-mono text-sm block">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                    <span className="text-[10px] text-green-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>Connected</span>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="space-y-7">
-                {/* Wallet info */}
-                <div className="flex items-center justify-between bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 shadow-inner">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-ritual-primary to-ritual-accent flex items-center justify-center shadow-lg shadow-ritual-primary/20">
-                      <span className="text-white text-xs font-bold">{address?.slice(2, 4)}</span>
+                {/* Balance */}
+                <div className="flex items-center gap-2 bg-slate-900/60 px-4 py-2.5 rounded-xl border border-slate-700/50">
+                  <Wallet size={16} className="text-ritual-gold" />
+                  <span className="text-ritual-gold font-bold text-sm" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.75rem' }}>{displayBalance}</span>
+                  <span className="text-slate-500 text-xs">RITUAL</span>
+                </div>
+
+                {/* Player Name */}
+                {!nameSet ? (
+                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                    <div className="flex-1 relative">
+                      <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <input
+                        type="text"
+                        value={playerName}
+                        onChange={(e) => setPlayerName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && playerName.trim()) { setNameSet(true); playSound('success') } }}
+                        placeholder="Enter your name..."
+                        maxLength={20}
+                        className="w-full pl-9 pr-3 py-2.5 bg-slate-900/60 border border-slate-700/50 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-ritual-primary/50 focus:shadow-[0_0_15px_rgba(168,85,247,0.1)] transition-all"
+                      />
                     </div>
-                    <div>
-                      <span className="text-slate-300 font-mono text-sm block">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-                      <span className="text-[10px] text-green-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>Connected</span>
-                    </div>
+                    <button
+                      onClick={() => { if (playerName.trim()) { setNameSet(true); playSound('success') } }}
+                      disabled={!playerName.trim()}
+                      className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${playerName.trim() ? 'bg-ritual-primary/20 text-ritual-primary border border-ritual-primary/30 hover:bg-ritual-primary/30' : 'bg-slate-800/50 text-slate-600 border border-slate-700/30 cursor-not-allowed'}`}
+                    >
+                      Set
+                    </button>
                   </div>
-                  <button onClick={() => { disconnect(); playSound('click') }} className="text-sm px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors font-medium border border-red-500/10">Disconnect</button>
-                </div>
+                ) : (
+                  <div className="flex items-center gap-2 bg-ritual-primary/10 px-4 py-2.5 rounded-xl border border-ritual-primary/20">
+                    <User size={14} className="text-ritual-primary" />
+                    <span className="text-white font-bold text-sm" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.7rem' }}>{playerName}</span>
+                    <button onClick={() => setNameSet(false)} className="text-slate-500 hover:text-white text-xs ml-1">✏️</button>
+                  </div>
+                )}
 
-                {/* Opponent */}
-                <div>
-                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
-                    <Users className="text-ritual-accent" size={18}/> SELECT OPPONENT
-                  </h3>
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => { setOpponent('bot'); playSound('click') }}
-                      onMouseEnter={() => playSound('hover')}
-                      className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'bot' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
-                    >
-                      <Bot className="mx-auto mb-2" size={22} /> <span className="text-sm">vs AI Bot</span>
-                    </button>
-                    <button 
-                      onClick={() => { setOpponent('pvp'); playSound('click') }}
-                      onMouseEnter={() => playSound('hover')}
-                      className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'pvp' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
-                    >
-                      <Users className="mx-auto mb-2" size={22} /> <span className="text-sm">PvP</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Role */}
-                <div>
-                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
-                    <Crosshair className="text-ritual-primary" size={18}/> SELECT ROLE
-                  </h3>
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => { setMode('hider'); playSound('click') }}
-                      onMouseEnter={() => playSound('hover')}
-                      className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'hider' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
-                    >
-                      🎨 <span className="text-sm">Hider</span>
-                    </button>
-                    <button 
-                      onClick={() => { setMode('seeker'); playSound('click') }}
-                      onMouseEnter={() => playSound('hover')}
-                      disabled={opponent === 'bot'} 
-                      className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'seeker' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'} ${opponent === 'bot' ? 'opacity-40 cursor-not-allowed' : ''}`}
-                    >
-                      🔍 <span className="text-sm">Seeker</span>
-                    </button>
-                  </div>
-                </div>
+                <button onClick={() => { disconnect(); playSound('click') }} className="text-sm px-3 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors font-medium border border-red-500/10 ml-auto">Disconnect</button>
               </div>
+            </div>
 
-              <div className="space-y-7 flex flex-col">
-                {/* Map Selection */}
-                <div>
-                  <h3 className="text-lg font-bold mb-3" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>SELECT MAP</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {mapNames.map((m, idx) => (
-                      <button
-                        key={m}
-                        onClick={() => { setMap(idx); playSound('click') }}
-                        onMouseEnter={() => playSound('hover')}
-                        className={`map-card relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
-                      >
-                        <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-25'}`} style={{ imageRendering: 'pixelated' }} />
-                        <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1.5">
-                          <span className="text-base tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.7rem' }}>{m.toUpperCase()}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border bg-black/60 backdrop-blur-sm ${mapDiffColors[idx]}`}>
-                            {mapDifficulties[idx]}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Start Button */}
-                <button 
-                  onClick={() => { startGame(); playSound('start') }}
-                  onMouseEnter={() => playSound('hover')}
-                  disabled={!mode}
-                  className={`glow-btn w-full mt-auto py-5 rounded-xl font-extrabold text-lg transition-all transform shadow-xl relative z-10 ${mode ? 'bg-gradient-to-r from-ritual-primary via-purple-500 to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/50'}`}
-                  style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: '0.1em' }}
+            {/* ===== TAB NAVIGATION ===== */}
+            <div className="flex gap-2 bg-slate-900/40 p-1.5 rounded-xl border border-slate-700/30">
+              {[
+                { key: 'config' as const, icon: <Crosshair size={16} />, label: 'Game Config' },
+                { key: 'character' as const, icon: <Palette size={16} />, label: 'Character' },
+                { key: 'preview' as const, icon: <Eye size={16} />, label: 'Map Preview' },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => { setSetupTab(tab.key); playSound('click') }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all ${setupTab === tab.key ? 'bg-ritual-primary/15 text-white border border-ritual-primary/30 shadow-lg shadow-ritual-primary/5' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}
+                  style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.7rem' }}
                 >
-                  {mode ? '▶ START GAME' : 'SELECT A ROLE'}
+                  {tab.icon} {tab.label}
                 </button>
-              </div>
+              ))}
+            </div>
+
+            {/* ===== TAB CONTENT ===== */}
+            <div className="game-card rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-accent/40 to-transparent"></div>
+
+              {/* TAB 1: Game Config */}
+              {setupTab === 'config' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
+                  <div className="space-y-7">
+                    {/* Opponent */}
+                    <div>
+                      <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                        <Users className="text-ritual-accent" size={18}/> SELECT OPPONENT
+                      </h3>
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => { setOpponent('bot'); playSound('click') }}
+                          onMouseEnter={() => playSound('hover')}
+                          className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'bot' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                        >
+                          <Bot className="mx-auto mb-2" size={22} /> <span className="text-sm">vs AI Bot</span>
+                        </button>
+                        <button 
+                          onClick={() => { setOpponent('pvp'); playSound('click') }}
+                          onMouseEnter={() => playSound('hover')}
+                          className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'pvp' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                        >
+                          <Users className="mx-auto mb-2" size={22} /> <span className="text-sm">PvP</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Role */}
+                    <div>
+                      <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                        <Crosshair className="text-ritual-primary" size={18}/> SELECT ROLE
+                      </h3>
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => { setMode('hider'); playSound('click') }}
+                          onMouseEnter={() => playSound('hover')}
+                          className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'hider' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                        >
+                          🎨 <span className="text-sm">Hider</span>
+                        </button>
+                        <button 
+                          onClick={() => { setMode('seeker'); playSound('click') }}
+                          onMouseEnter={() => playSound('hover')}
+                          disabled={opponent === 'bot'} 
+                          className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'seeker' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'} ${opponent === 'bot' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                        >
+                          🔍 <span className="text-sm">Seeker</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-7 flex flex-col">
+                    {/* Map Selection */}
+                    <div>
+                      <h3 className="text-lg font-bold mb-3" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>SELECT MAP</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {mapNames.map((m, idx) => (
+                          <button
+                            key={m}
+                            onClick={() => { setMap(idx); playSound('click') }}
+                            onMouseEnter={() => playSound('hover')}
+                            className={`map-card relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
+                          >
+                            <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-25'}`} style={{ imageRendering: 'pixelated' }} />
+                            <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1.5">
+                              <span className="text-base tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.7rem' }}>{m.toUpperCase()}</span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full border bg-black/60 backdrop-blur-sm ${mapDiffColors[idx]}`}>
+                                {mapDifficulties[idx]}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Start Button */}
+                    <button 
+                      onClick={() => { if (nameSet) { startGame(); playSound('start') } else { playSound('click'); setSetupTab('config') } }}
+                      onMouseEnter={() => playSound('hover')}
+                      disabled={!mode || !nameSet}
+                      className={`glow-btn w-full mt-auto py-5 rounded-xl font-extrabold text-lg transition-all transform shadow-xl relative z-10 ${mode && nameSet ? 'bg-gradient-to-r from-ritual-primary via-purple-500 to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/50'}`}
+                      style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: '0.1em' }}
+                    >
+                      {!nameSet ? 'SET YOUR NAME FIRST' : mode ? '▶ START GAME' : 'SELECT A ROLE'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: Character Preview & Creation */}
+              {setupTab === 'character' && (
+                <div className="animate-fade-in">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                    <Palette className="text-ritual-primary" size={18}/> YOUR CHARACTER
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Character pixel editor */}
+                    <div>
+                      <p className="text-slate-400 text-sm mb-4">This is your base character. You'll paint over it during the game to blend with the map. Try some colors now!</p>
+                      <div className="relative w-full max-w-[320px] aspect-square rounded-xl border-2 border-slate-600 overflow-hidden shadow-inner bg-slate-900 mx-auto" style={{ imageRendering: 'pixelated' }}>
+                        <div className="absolute inset-0 bg-[repeating-conic-gradient(rgba(255,255,255,0.03)_0%_25%,transparent_0%_50%)] bg-[length:20px_20px]"></div>
+                        <div className="absolute inset-0 grid z-10" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
+                          {characterPixels.map((color, i) => (
+                            <div 
+                              key={i} 
+                              onMouseDown={() => { if (CHARACTER_MASK[i]) { const newPx = [...characterPixels]; newPx[i] = paintColor; setCharacterPixels(newPx); playSound('paint') } }}
+                              onMouseEnter={(e) => { if (e.buttons === 1 && CHARACTER_MASK[i]) { const newPx = [...characterPixels]; newPx[i] = paintColor; setCharacterPixels(newPx) } }}
+                              style={{ backgroundColor: CHARACTER_MASK[i] ? (color === 'transparent' ? 'rgba(255,255,255,0.05)' : color) : 'transparent' }}
+                              className={`border-[0.2px] border-white/5 ${CHARACTER_MASK[i] ? 'cursor-crosshair hover:border-white/30' : ''}`}
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Color palette quick picks */}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-2 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>PICK COLOR</p>
+                        <input type="color" value={paintColor} onChange={(e) => setPaintColor(e.target.value)} className="w-full h-12 rounded-lg cursor-pointer border-2 border-slate-600 bg-slate-900" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-2 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>QUICK PALETTE</p>
+                        <div className="grid grid-cols-8 gap-1.5">
+                          {['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#ffffff','#94a3b8','#64748b','#334155','#1e293b','#0f172a','#7c3aed','#14b8a6'].map(c => (
+                            <button key={c} onClick={() => { setPaintColor(c); playSound('click') }} className={`w-full aspect-square rounded-md border-2 transition-all hover:scale-110 ${paintColor === c ? 'border-white shadow-lg' : 'border-slate-700'}`} style={{ backgroundColor: c }} />
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-2 font-semibold" style={{ fontFamily: "'Orbitron', sans-serif" }}>ACTIONS</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => { setCharacterPixels(CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent')); playSound('click') }} className="flex-1 py-2.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-bold border border-slate-700 transition-all">Reset</button>
+                          <button onClick={() => { setCharacterPixels(CHARACTER_MASK.map(m => m === 1 ? paintColor : 'transparent')); playSound('click') }} className="flex-1 py-2.5 rounded-lg bg-ritual-primary/20 text-ritual-primary hover:bg-ritual-primary/30 text-xs font-bold border border-ritual-primary/30 transition-all">Fill All</button>
+                        </div>
+                      </div>
+                      <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/30 mt-4">
+                        <p className="text-xs text-slate-400 leading-relaxed">💡 <strong className="text-slate-300">Tip:</strong> During the actual game, you'll use the Eyedropper tool to pick exact colors from the map background. This is just a practice area!</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: Map Preview */}
+              {setupTab === 'preview' && (
+                <div className="animate-fade-in">
+                  <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                    <Eye className="text-ritual-accent" size={18}/> MAP PREVIEW — {mapNames[map].toUpperCase()}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Full map preview */}
+                    <div className="md:col-span-2">
+                      <p className="text-slate-400 text-sm mb-3">Study the map carefully! Plan where to hide and what colors you'll need to blend in.</p>
+                      <div className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl aspect-square max-w-[500px]" style={{ imageRendering: 'pixelated' }}>
+                        {pixelatedMapUrl && <img src={pixelatedMapUrl} alt="Map Preview" className="w-full h-full object-cover" />}
+                        <div className="absolute inset-0 grid grid-cols-10 grid-rows-10">
+                          {Array(100).fill(0).map((_, i) => (
+                            <div key={i} className="border border-white/5 hover:bg-white/10 transition-colors"></div>
+                          ))}
+                        </div>
+                        <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-600">
+                          <span className={`text-xs font-bold ${mapDiffColors[map].split(' ')[0]}`}>{mapDifficulties[map]}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Map info sidebar */}
+                    <div className="space-y-4">
+                      <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/30">
+                        <p className="text-xs font-bold text-slate-500 mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>MAP INFO</p>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between"><span className="text-slate-400">Name</span><span className="text-white font-bold">{mapNames[map]}</span></div>
+                          <div className="flex justify-between"><span className="text-slate-400">Difficulty</span><span className={`font-bold ${mapDiffColors[map].split(' ')[0]}`}>{mapDifficulties[map]}</span></div>
+                          <div className="flex justify-between"><span className="text-slate-400">Grid</span><span className="text-white font-bold">10 × 10</span></div>
+                          <div className="flex justify-between"><span className="text-slate-400">Resolution</span><span className="text-white font-bold">160 × 160 px</span></div>
+                        </div>
+                      </div>
+                      <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700/30">
+                        <p className="text-xs font-bold text-slate-500 mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>YOUR CHARACTER</p>
+                        <div className="w-24 h-24 mx-auto rounded-lg border border-slate-600 overflow-hidden bg-slate-800" style={{ imageRendering: 'pixelated' }}>
+                          <div className="w-full h-full grid" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
+                            {characterPixels.map((color, i) => (
+                              <div key={i} style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} className="w-full h-full"></div>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-slate-500 text-center mt-2">Current look (pre-camouflage)</p>
+                      </div>
+                      <div className="bg-yellow-500/5 p-4 rounded-xl border border-yellow-500/15">
+                        <p className="text-xs text-yellow-400/80 leading-relaxed">🎯 <strong>Strategy:</strong> Observe the dominant colors in your chosen cell. In-game, use the Eyedropper to match them exactly!</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
