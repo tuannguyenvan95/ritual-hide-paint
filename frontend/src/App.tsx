@@ -1271,25 +1271,14 @@ function GameContent() {
                       <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-700/30">
                         <p className="text-[10px] font-bold text-slate-500 mb-1" style={{ fontFamily: "'Orbitron', sans-serif" }}>YOUR CHARACTER</p>
                         <div className="flex justify-center mt-2">
-                                  {hiddenPosition !== null && pixelatedMapUrl && (
-                    <div className="w-24 h-24 rounded-lg border border-slate-600 overflow-hidden relative shadow-inner">
-                      <div 
-                         className="absolute w-[1000%] h-[1000%]"
-                         style={{
-                           backgroundImage: `url(${pixelatedMapUrl})`,
-                           backgroundSize: '100% 100%',
-                           backgroundPosition: `${(hiddenPosition.x / 144) * 100}% ${(hiddenPosition.y / 144) * 100}%`,
-                           imageRendering: 'pixelated'
-                         }}
-                      />
-                      <div className="absolute inset-0 grid" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
-                        {characterPixels.map((color, i) => (
-                           <div key={i} style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} className="w-full h-full"></div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                          <div className="w-24 h-24 rounded-lg border border-slate-600 overflow-hidden relative shadow-inner bg-slate-800/50">
+                            <div className="absolute inset-0 grid" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
+                              {characterPixels.map((color, i) => (
+                                 <div key={i} style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} className="w-full h-full"></div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                         <p className="text-[10px] text-slate-500 text-center mt-2">Current look (pre-camouflage)</p>
                       </div>
                       <div className="bg-yellow-500/5 p-3 rounded-xl border border-yellow-500/15">
