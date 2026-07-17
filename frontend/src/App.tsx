@@ -2,15 +2,17 @@ import { useState, useRef } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
-import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users } from 'lucide-react'
+import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette } from 'lucide-react'
 
 import forestMap from './assets/forest_map.jpg'
 import cityMap from './assets/city_map.jpg'
 import spaceMap from './assets/space_map.jpg'
 import underwaterMap from './assets/underwater_map.jpg'
 
-const mapImages = [forestMap, cityMap, spaceMap, underwaterMap]
-const mapNames = ['Forest', 'City', 'Space', 'Underwater']
+const mapImages = [spaceMap, underwaterMap, cityMap, forestMap]
+const mapNames = ['Space', 'Underwater', 'City', 'Forest']
+const mapDifficulties = ['Easy', 'Easy', 'Normal', 'Hard']
+const mapDiffColors = ['text-green-400 border-green-400/30', 'text-green-400 border-green-400/30', 'text-yellow-400 border-yellow-400/30', 'text-red-400 border-red-400/30']
 
 const queryClient = new QueryClient()
 
@@ -23,6 +25,30 @@ function colorDistance(rgb1: number[], rgb2: number[]) {
   )
 }
 
+function rgbToHex(r: number, g: number, b: number) {
+  return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)
+}
+
+// 16x16 Character Mask (1 = Paintable character body, 0 = transparent bounding box)
+const CHARACTER_MASK = [
+  0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,
+  0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,
+  0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+  0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+  0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+  0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,
+  0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,
+  0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,
+  0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,
+  0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0
+]
+
 function GameContent() {
   const { address, isConnected } = useAccount()
   const { connectors, connect } = useConnect()
@@ -31,19 +57,20 @@ function GameContent() {
   const [mode, setMode] = useState<'hider' | 'seeker' | null>(null)
   const [opponent, setOpponent] = useState<'bot' | 'pvp'>('bot')
   const [map, setMap] = useState<number>(0)
-
-  const [inGame, setInGame] = useState(false)
   
-  // Grid and positions
+  const [inGame, setInGame] = useState(false)
   const [grid, setGrid] = useState<number[]>(Array(100).fill(0)) // 10x10 grid
   const [hiddenIndex, setHiddenIndex] = useState<number | null>(null)
   const [gameStatus, setGameStatus] = useState<'waiting' | 'painting' | 'ready' | 'finished'>('waiting')
   
-  // Pixel Paint state
+  // Pixel Paint state (16x16 = 256 pixels)
   const [paintColor, setPaintColor] = useState('#8b5cf6')
-  const [characterPixels, setCharacterPixels] = useState<string[]>(Array(64).fill('transparent')) // 8x8 character grid
+  const [activeTool, setActiveTool] = useState<'brush' | 'eraser' | 'picker'>('brush')
+  // Initialize character with a default base color for paintable areas, transparent for non-paintable
+  const [characterPixels, setCharacterPixels] = useState<string[]>(
+    CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent')
+  ) 
   
-  // Refs for canvas image analysis
   const imgRef = useRef<HTMLImageElement>(null)
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -55,7 +82,7 @@ function GameContent() {
     setInGame(true)
     setGrid(Array(100).fill(0))
     setHiddenIndex(null)
-    setCharacterPixels(Array(64).fill('transparent'))
+    setCharacterPixels(CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent'))
     setGameStatus('waiting')
     setBotMessage('')
   }
@@ -68,12 +95,10 @@ function GameContent() {
       setHiddenIndex(index)
       setGameStatus('painting')
     } else {
-      // Seeker PvP
       if (gameStatus === 'waiting' || opponent === 'bot') return 
-      
       const newGrid = [...grid]
       if (index === hiddenIndex) {
-        newGrid[index] = 2 // Found!
+        newGrid[index] = 2 // Found
         setGameStatus('finished')
         alert("You found it! You win the pot!")
       } else {
@@ -83,10 +108,49 @@ function GameContent() {
     }
   }
 
-  const handlePaintPixel = (idx: number, isEraser: boolean = false) => {
+  const handlePaintPixel = (idx: number) => {
+    if (CHARACTER_MASK[idx] === 0) return // Cannot paint outside character body
+
+    if (activeTool === 'picker') {
+      pickColorFromBackground(idx)
+      setActiveTool('brush')
+      return
+    }
+
     const newPixels = [...characterPixels]
-    newPixels[idx] = isEraser ? 'transparent' : paintColor
+    newPixels[idx] = activeTool === 'eraser' ? 'transparent' : paintColor
     setCharacterPixels(newPixels)
+  }
+
+  // Eyedropper: Pick color from the map background
+  const pickColorFromBackground = (idx: number) => {
+    if (!imgRef.current || !hiddenCanvasRef.current || hiddenIndex === null) return
+    
+    const canvas = hiddenCanvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    // Ensure canvas is drawn
+    canvas.width = imgRef.current.naturalWidth
+    canvas.height = imgRef.current.naturalHeight
+    ctx.drawImage(imgRef.current, 0, 0)
+    
+    const cellWidth = canvas.width / 10
+    const cellHeight = canvas.height / 10
+    const cellX = hiddenIndex % 10
+    const cellY = Math.floor(hiddenIndex / 10)
+    
+    // Pixel index in 16x16 grid
+    const pxX = idx % 16
+    const pxY = Math.floor(idx / 16)
+    
+    const sampleX = cellX * cellWidth + (pxX / 16) * cellWidth
+    const sampleY = cellY * cellHeight + (pxY / 16) * cellHeight
+    
+    const imgData = ctx.getImageData(sampleX, sampleY, 1, 1)
+    const [r, g, b] = imgData.data
+    const pickedHex = rgbToHex(r, g, b)
+    setPaintColor(pickedHex)
   }
 
   const confirmHideAndBotSeek = async () => {
@@ -94,7 +158,7 @@ function GameContent() {
     setGameStatus('ready')
     setTxPending(true)
     
-    // Simulate Blockchain TX for staking
+    // Simulate TX
     await new Promise(resolve => setTimeout(resolve, 1500))
     setTxPending(false)
 
@@ -104,10 +168,9 @@ function GameContent() {
   }
 
   const runBotAILogic = () => {
-    setBotMessage("Bot AI is scanning the environment...")
+    setBotMessage("Bot AI is scanning the environment pixels...")
     
     setTimeout(() => {
-      // Analyze colors using hidden canvas
       if (imgRef.current && hiddenCanvasRef.current && hiddenIndex !== null) {
         const canvas = hiddenCanvasRef.current
         const ctx = canvas.getContext('2d')
@@ -116,19 +179,14 @@ function GameContent() {
           canvas.height = imgRef.current.naturalHeight
           ctx.drawImage(imgRef.current, 0, 0)
           
-          // Calculate grid cell size
           const cellWidth = canvas.width / 10
           const cellHeight = canvas.height / 10
-          
-          // Get x, y of the hidden index
           const x = hiddenIndex % 10
           const y = Math.floor(hiddenIndex / 10)
           
-          // Get image data for that specific cell
           const imgData = ctx.getImageData(x * cellWidth, y * cellHeight, cellWidth, cellHeight)
           const data = imgData.data
           
-          // Calculate average RGB of the map cell
           let r = 0, g = 0, b = 0
           for (let i = 0; i < data.length; i += 4) {
             r += data[i]
@@ -138,10 +196,9 @@ function GameContent() {
           const pixelCount = data.length / 4
           const avgMapColor = [r/pixelCount, g/pixelCount, b/pixelCount]
 
-          // Calculate average RGB of the painted character
           let cr = 0, cg = 0, cb = 0, paintedCount = 0
-          characterPixels.forEach(hex => {
-            if (hex !== 'transparent') {
+          characterPixels.forEach((hex, idx) => {
+            if (CHARACTER_MASK[idx] === 1 && hex !== 'transparent') {
               const hexNum = hex.replace('#', '')
               cr += parseInt(hexNum.substring(0,2), 16)
               cg += parseInt(hexNum.substring(2,4), 16)
@@ -151,8 +208,7 @@ function GameContent() {
           })
           
           if (paintedCount === 0) {
-            // Invisible? Bot finds immediately for cheating (or winning, but let's say cheating)
-            setBotMessage("Bot: Hey! You didn't even draw a disguise! I found you immediately!")
+            setBotMessage("Bot: You didn't paint anything! Found you immediately!")
             setGameStatus('finished')
             return
           }
@@ -160,26 +216,28 @@ function GameContent() {
           const avgCharColor = [cr/paintedCount, cg/paintedCount, cb/paintedCount]
           const distance = colorDistance(avgMapColor, avgCharColor)
           
-          // Threshold logic: If distance is < 100, it's a good camouflage!
-          if (distance < 100) {
-            setBotMessage(`Bot: "I scanned everywhere... but your camouflage (${Math.round(100 - (distance/3))}%) was too good! I lose!"`)
+          // Harder map requires lower distance (better camouflage)
+          const isHard = mapDifficulties[map] === 'Hard'
+          const threshold = isHard ? 60 : 100 
+
+          if (distance < threshold) {
+            setBotMessage(`Bot: "I scanned everywhere... but your camouflage (${Math.round(100 - (distance/3))}%) was too perfect for this ${mapDifficulties[map]} map! I lose!"`)
           } else {
-            setBotMessage(`Bot: "Found you! Your colors stood out like a sore thumb (Mismatch: ${Math.round(distance)}). I win!"`)
+            setBotMessage(`Bot: "Found you! Your colors stood out. Mismatch: ${Math.round(distance)} (Needed < ${threshold} for this map). I win!"`)
             const newGrid = [...grid]
-            newGrid[hiddenIndex] = 2 // Bot reveals it
+            newGrid[hiddenIndex] = 2 
             setGrid(newGrid)
           }
           
           setGameStatus('finished')
         }
       }
-    }, 2000)
+    }, 2500)
   }
 
   if (inGame) {
     return (
       <div className="flex flex-col h-screen p-6 bg-ritual-dark">
-        {/* Hidden Canvas for Image Processing */}
         <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
         
         <header className="flex justify-between items-center mb-6 bg-slate-800/80 p-4 rounded-xl border border-slate-700 backdrop-blur-md shadow-lg z-50">
@@ -187,18 +245,15 @@ function GameContent() {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-ritual-primary to-ritual-accent bg-clip-text text-transparent drop-shadow-sm">Ritual Hide & Paint</h1>
             <p className="text-slate-400 text-sm">Mode: <span className="text-white capitalize font-semibold">{mode} (vs {opponent})</span> | Map: <span className="text-white font-semibold">{mapNames[map]}</span></p>
           </div>
-          <div className="flex gap-4">
-            <button onClick={() => setInGame(false)} className="px-4 py-2 border border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-semibold">Quit Game</button>
-          </div>
+          <button onClick={() => setInGame(false)} className="px-4 py-2 border border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-semibold">Quit Game</button>
         </header>
 
         <main className="flex-1 flex gap-6 min-h-0">
-          {/* Main Map Area */}
           <div className="flex-1 rounded-2xl border-2 border-slate-700 overflow-hidden flex flex-col relative bg-slate-900 shadow-2xl relative group">
             
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md px-6 py-3 rounded-full border border-slate-600 shadow-xl flex items-center gap-3">
               {gameStatus === 'waiting' && mode === 'hider' && <span className="text-ritual-accent font-bold animate-pulse">Click a grid cell to move your character there!</span>}
-              {gameStatus === 'painting' && <span className="text-yellow-400 font-bold">Paint your camouflage to match the environment!</span>}
+              {gameStatus === 'painting' && <span className="text-yellow-400 font-bold">Use the tools to camouflage your character!</span>}
               {gameStatus === 'ready' && <span className="text-white font-bold"><CheckCircle2 className="inline text-ritual-accent mr-2" size={20} />{txPending ? 'Staking RITUAL...' : 'Character Hidden!'}</span>}
               {gameStatus === 'finished' && <span className="text-ritual-primary font-bold">Game Over</span>}
             </div>
@@ -206,7 +261,6 @@ function GameContent() {
             <div className="flex-1 relative m-8 rounded-xl overflow-hidden shadow-2xl border border-slate-600 max-w-3xl max-h-[800px] aspect-square mx-auto my-auto">
               <img ref={imgRef} src={mapImages[map]} crossOrigin="anonymous" alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-80" />
               
-              {/* 10x10 Grid Overlay */}
               <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 gap-0">
                 {grid.map((cellState, index) => (
                   <div 
@@ -214,15 +268,14 @@ function GameContent() {
                     onClick={() => handleCellClick(index)}
                     className={`
                       border border-white/10 hover:border-white/50 hover:bg-white/10 cursor-pointer transition-all flex items-center justify-center
-                      ${hiddenIndex === index ? 'bg-black/40 border-ritual-primary ring-2 ring-ritual-primary ring-inset backdrop-blur-sm' : ''}
+                      ${hiddenIndex === index ? 'bg-black/20 border-ritual-primary ring-2 ring-ritual-primary ring-inset backdrop-blur-sm' : ''}
                       ${cellState === 2 ? 'bg-red-500/50 backdrop-blur-sm' : ''}
                     `}
                   >
-                    {/* Render the painted character on the map if hidden here */}
                     {hiddenIndex === index && gameStatus !== 'waiting' && (
-                      <div className="w-3/4 h-3/4 grid grid-cols-8 grid-rows-8 shadow-2xl drop-shadow-2xl">
+                      <div className="w-3/4 h-3/4 grid grid-cols-16 grid-rows-16 shadow-2xl drop-shadow-2xl" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
                          {characterPixels.map((color, i) => (
-                           <div key={i} style={{ backgroundColor: color }} className="w-full h-full"></div>
+                           <div key={i} style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} className="w-full h-full"></div>
                          ))}
                       </div>
                     )}
@@ -232,35 +285,68 @@ function GameContent() {
             </div>
           </div>
 
-          {/* Side Panel: Paint Tool & Bot Status */}
-          <div className="w-96 flex flex-col gap-6">
-            {/* Paint Tool */}
+          <div className="w-[420px] flex flex-col gap-6">
             {mode === 'hider' && (gameStatus === 'painting' || gameStatus === 'ready' || gameStatus === 'finished') && (
               <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-xl backdrop-blur-md">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Brush className="text-ritual-primary"/> Camouflage Paint</h3>
+                <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Brush className="text-ritual-primary"/> Character Camouflage</h3>
                 
-                <div className="flex gap-4 mb-4">
-                  <input type="color" value={paintColor} onChange={(e) => setPaintColor(e.target.value)} className="w-12 h-12 rounded cursor-pointer border-2 border-slate-600 bg-slate-900" />
-                  <button className="flex-1 flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 rounded-lg font-semibold transition-colors">
+                <div className="flex gap-2 mb-4 bg-slate-900 p-2 rounded-xl border border-slate-700">
+                  <input 
+                    type="color" 
+                    value={paintColor} 
+                    onChange={(e) => {setPaintColor(e.target.value); setActiveTool('brush')}} 
+                    className="w-12 h-12 rounded cursor-pointer border-2 border-slate-600 bg-slate-900 flex-shrink-0" 
+                  />
+                  <button 
+                    onClick={() => setActiveTool('brush')}
+                    className={`flex-1 flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors ${activeTool === 'brush' ? 'bg-ritual-primary text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+                  >
                     <Brush size={18} /> Paint
                   </button>
-                  <button onClick={() => setPaintColor('transparent')} className="flex items-center justify-center p-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-red-400 transition-colors" title="Eraser">
+                  <button 
+                    onClick={() => setActiveTool('picker')}
+                    className={`flex items-center justify-center p-3 rounded-lg transition-colors ${activeTool === 'picker' ? 'bg-blue-500 text-white' : 'bg-slate-800 text-blue-400 hover:bg-slate-700'}`}
+                    title="Eyedropper: Pick color from background map"
+                  >
+                    <Pipette size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setActiveTool('eraser')}
+                    className={`flex items-center justify-center p-3 rounded-lg transition-colors ${activeTool === 'eraser' ? 'bg-red-500 text-white' : 'bg-slate-800 text-red-400 hover:bg-slate-700'}`}
+                    title="Eraser"
+                  >
                     <Eraser size={18} />
                   </button>
                 </div>
 
-                {/* 8x8 Pixel Art Canvas */}
-                <div className="w-full aspect-square bg-slate-900 rounded-xl border-2 border-slate-600 grid grid-cols-8 grid-rows-8 overflow-hidden mb-6 relative" 
-                     onMouseLeave={() => {/* optional: stop drawing */}}>
-                  {characterPixels.map((color, i) => (
-                    <div 
-                      key={i} 
-                      onMouseDown={() => handlePaintPixel(i, paintColor === 'transparent')}
-                      onMouseEnter={(e) => { if(e.buttons === 1) handlePaintPixel(i, paintColor === 'transparent') }}
-                      style={{ backgroundColor: color === 'transparent' ? 'rgba(255,255,255,0.05)' : color }}
-                      className="border-[0.5px] border-white/5 cursor-crosshair hover:border-white/30 transition-colors"
-                    ></div>
-                  ))}
+                <div className="relative w-full aspect-square rounded-xl border-2 border-slate-600 overflow-hidden mb-6 shadow-inner bg-slate-900">
+                  {/* Background image mapped to this specific cell for tracing */}
+                  {hiddenIndex !== null && (
+                     <div 
+                       className="absolute inset-0 opacity-40 pointer-events-none"
+                       style={{
+                         backgroundImage: `url(${mapImages[map]})`,
+                         backgroundSize: '1000% 1000%', // Because 10x10 grid
+                         backgroundPosition: `${(hiddenIndex % 10) * 11.11}% ${Math.floor(hiddenIndex / 10) * 11.11}%`
+                       }}
+                     />
+                  )}
+                  
+                  {/* 16x16 Pixel Art Canvas */}
+                  <div className="absolute inset-0 grid grid-cols-16 grid-rows-16 z-10" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
+                    {characterPixels.map((color, i) => (
+                      <div 
+                        key={i} 
+                        onMouseDown={() => handlePaintPixel(i)}
+                        onMouseEnter={(e) => { if(e.buttons === 1) handlePaintPixel(i) }}
+                        style={{ backgroundColor: CHARACTER_MASK[i] ? (color === 'transparent' ? 'rgba(255,255,255,0.1)' : color) : 'rgba(0,0,0,0.6)' }}
+                        className={`
+                          border-[0.2px] border-white/10 transition-colors
+                          ${CHARACTER_MASK[i] ? 'cursor-crosshair hover:border-white/50' : 'cursor-not-allowed opacity-30'}
+                        `}
+                      ></div>
+                    ))}
+                  </div>
                 </div>
 
                 {gameStatus === 'painting' && (
@@ -275,13 +361,12 @@ function GameContent() {
               </div>
             )}
 
-            {/* Bot Status Panel */}
             {opponent === 'bot' && (
               <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-xl backdrop-blur-md flex-1">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Bot className="text-ritual-accent"/> AI Seeker Status</h3>
                 <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 min-h-[150px] flex items-center justify-center font-mono text-sm text-slate-300 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-2 opacity-10"><Bot size={80} /></div>
-                  <p className="relative z-10 text-center leading-relaxed">
+                  <p className="relative z-10 text-center leading-relaxed px-4">
                     {botMessage || "Waiting for you to hide..."}
                   </p>
                 </div>
@@ -323,7 +408,6 @@ function GameContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {/* Left Column: Settings */}
             <div className="space-y-8">
               <div className="flex items-center justify-between bg-slate-900/50 p-4 rounded-xl border border-slate-700 shadow-inner">
                 <div className="flex items-center gap-3">
@@ -364,9 +448,8 @@ function GameContent() {
                   </button>
                   <button 
                     onClick={() => setMode('seeker')}
-                    disabled={opponent === 'bot'} // In this demo, if Bot, you must be hider. Or we can allow both, but let's just disable for simplicity if bot.
+                    disabled={opponent === 'bot'} 
                     className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'seeker' ? 'border-ritual-accent bg-ritual-accent/20 text-white shadow-lg' : 'border-slate-700 text-slate-400 hover:border-slate-500 bg-slate-900/50'} ${opponent === 'bot' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title={opponent === 'bot' ? 'PvE Seeker mode coming soon!' : ''}
                   >
                     Seeker
                   </button>
@@ -374,10 +457,9 @@ function GameContent() {
               </div>
             </div>
 
-            {/* Right Column: Map Selection */}
             <div className="space-y-8 flex flex-col">
               <div>
-                <h3 className="text-xl font-bold mb-4">Select Map</h3>
+                <h3 className="text-xl font-bold mb-4">Select Map & Difficulty</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {mapNames.map((m, idx) => (
                     <button
@@ -385,8 +467,13 @@ function GameContent() {
                       onClick={() => setMap(idx)}
                       className={`relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all group ${map === idx ? 'border-ritual-primary ring-4 ring-ritual-primary/20 text-white' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}
                     >
-                      <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-30 group-hover:opacity-40'}`} />
-                      <span className="relative z-10 text-lg tracking-wide drop-shadow-md">{m}</span>
+                      <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-60' : 'opacity-30 group-hover:opacity-40'}`} />
+                      <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1">
+                        <span className="text-lg tracking-wide drop-shadow-md font-bold">{m}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border bg-black/50 backdrop-blur-sm ${mapDiffColors[idx]}`}>
+                          {mapDifficulties[idx]}
+                        </span>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -395,7 +482,7 @@ function GameContent() {
               <button 
                 onClick={startGame}
                 disabled={!mode}
-                className={`w-full py-5 rounded-xl font-extrabold text-xl transition-all transform shadow-xl ${mode ? 'bg-gradient-to-r from-ritual-primary to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+                className={`w-full mt-auto py-5 rounded-xl font-extrabold text-xl transition-all transform shadow-xl ${mode ? 'bg-gradient-to-r from-ritual-primary to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
               >
                 {mode ? `Start Game` : 'Select a Role'}
               </button>
