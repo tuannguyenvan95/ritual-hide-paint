@@ -59,7 +59,7 @@ function GameContent() {
   const [inGame, setInGame] = useState(false)
   const [grid, setGrid] = useState<number[]>(Array(100).fill(0))
   const [hiddenPosition, setHiddenPosition] = useState<{x: number, y: number} | null>(null)
-  const [gameStatus, setGameStatus] = useState<'waiting' | 'painting' | 'ready' | 'finished'>('waiting')
+  const [gameStatus, setGameStatus] = useState<'waiting' | 'painting' | 'ready' | 'seeking' | 'finished'>('waiting')
   const [gameResult, setGameResult] = useState<'win' | 'loss' | null>(null)
   
   const [paintColor, setPaintColor] = useState('#8b5cf6')
