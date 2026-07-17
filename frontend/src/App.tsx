@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance, useSignMessage } from 'wagmi'
+import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance, useSendTransaction } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
 import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette, Move, Trophy, AlertCircle, Timer } from 'lucide-react'
@@ -51,7 +51,7 @@ function GameContent() {
   const { address, isConnected } = useAccount()
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
-  const { signMessageAsync } = useSignMessage()
+  const { sendTransactionAsync } = useSendTransaction()
 
   const [mode, setMode] = useState<'hider' | 'seeker' | null>(null)
   const [opponent, setOpponent] = useState<'bot' | 'pvp'>('bot')
@@ -241,9 +241,9 @@ function GameContent() {
       playSound('click')
       
       if (Number(betAmount) > 0) {
-        await signMessageAsync({ message: `Ritual Hide & Paint\n\nAction: Deposit Wager & Start Game\nMode: ${mode}\nBet: ${betAmount} RITUAL\nMap: ${mapNames[map]}` })
+        await sendTransactionAsync({ to: address, value: BigInt(0) })
       } else {
-        await signMessageAsync({ message: `Ritual Hide & Paint\n\nAction: Start Free Game\nMode: ${mode}\nMap: ${mapNames[map]}` })
+        await sendTransactionAsync({ to: address, value: BigInt(0) })
       }
       
       setIsConfirmingTx(false)
