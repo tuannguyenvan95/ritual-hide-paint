@@ -869,7 +869,21 @@ function GameContent() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Full map preview */}
                     <div className="md:col-span-2">
-                      <p className="text-slate-400 text-sm mb-3">Study the map carefully! Plan where to hide and what colors you'll need to blend in.</p>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-slate-400 text-sm">Select a map to preview its layout and plan your camouflage.</p>
+                        <div className="flex gap-2">
+                          {mapNames.map((m, idx) => (
+                            <button 
+                              key={idx}
+                              onClick={() => { setMap(idx); playSound('click') }}
+                              className={`w-10 h-10 rounded-md border-2 overflow-hidden transition-all hover:scale-105 ${map === idx ? 'border-ritual-accent shadow-[0_0_10px_rgba(168,85,247,0.5)]' : 'border-slate-700/50 hover:border-slate-500 opacity-50 hover:opacity-100'}`}
+                              title={m}
+                            >
+                              <img src={mapImages[idx]} alt={m} className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <div className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl aspect-square max-w-[500px]" style={{ imageRendering: 'pixelated' }}>
                         {pixelatedMapUrl && <img src={pixelatedMapUrl} alt="Map Preview" className="w-full h-full object-cover" />}
                         <div className="absolute inset-0 grid grid-cols-10 grid-rows-10">
