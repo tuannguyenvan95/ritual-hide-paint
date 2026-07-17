@@ -8,11 +8,35 @@ import forestMap from './assets/forest_map.jpg'
 import cityMap from './assets/city_map.jpg'
 import spaceMap from './assets/space_map.jpg'
 import underwaterMap from './assets/underwater_map.jpg'
+import snowMap from './assets/snow_map.jpg'
+import desertMap from './assets/desert_map.jpg'
+import castleMap from './assets/castle_map.jpg'
+import factoryMap from './assets/factory_map.jpg'
+import swampMap from './assets/swamp_map.jpg'
+import cyberpunkMap from './assets/cyberpunk_map.jpg'
+import volcanoMap from './assets/volcano_map.jpg'
+import candyMap from './assets/candy_map.jpg'
 
-const mapImages = [spaceMap, underwaterMap, cityMap, forestMap]
-const mapNames = ['Space', 'Underwater', 'City', 'Forest']
-const mapDifficulties = ['Easy', 'Easy', 'Normal', 'Hard']
-const mapDiffColors = ['text-green-400 border-green-400/30', 'text-green-400 border-green-400/30', 'text-yellow-400 border-yellow-400/30', 'text-red-400 border-red-400/30']
+const mapImages = [
+  spaceMap, underwaterMap, snowMap, desertMap,
+  cityMap, castleMap, factoryMap, swampMap,
+  forestMap, cyberpunkMap, volcanoMap, candyMap
+]
+const mapNames = [
+  'Space', 'Underwater', 'Snow', 'Desert',
+  'City', 'Castle', 'Factory', 'Swamp',
+  'Forest', 'Cyberpunk', 'Volcano', 'Candy Land'
+]
+const mapDifficulties = [
+  'Easy', 'Easy', 'Easy', 'Easy',
+  'Normal', 'Normal', 'Normal', 'Normal',
+  'Hard', 'Hard', 'Hard', 'Hard'
+]
+const mapDiffColors = [
+  'text-green-400 border-green-400/30', 'text-green-400 border-green-400/30', 'text-green-400 border-green-400/30', 'text-green-400 border-green-400/30',
+  'text-yellow-400 border-yellow-400/30', 'text-yellow-400 border-yellow-400/30', 'text-yellow-400 border-yellow-400/30', 'text-yellow-400 border-yellow-400/30',
+  'text-red-400 border-red-400/30', 'text-red-400 border-red-400/30', 'text-red-400 border-red-400/30', 'text-red-400 border-red-400/30'
+]
 
 const queryClient = new QueryClient()
 
@@ -1042,24 +1066,33 @@ function GameContent() {
 
                   <div className="space-y-7 flex flex-col">
                     {/* Map Selection */}
-                    <div>
-                      <h3 className="text-lg font-bold mb-3" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>SELECT MAP</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {mapNames.map((m, idx) => (
-                          <button
-                            key={m}
-                            onClick={() => { setMap(idx); playSound('click') }}
-                            onMouseEnter={() => playSound('hover')}
-                            className={`map-card relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
-                          >
-                            <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-25'}`} style={{ imageRendering: 'pixelated' }} />
-                            <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1.5">
-                              <span className="text-base tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.7rem' }}>{m.toUpperCase()}</span>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full border bg-black/60 backdrop-blur-sm ${mapDiffColors[idx]}`}>
-                                {mapDifficulties[idx]}
-                              </span>
+                    <div className="flex-1 min-h-0 flex flex-col">
+                      <h3 className="text-lg font-bold mb-2 shrink-0" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>SELECT MAP</h3>
+                      <div className="overflow-y-auto pr-2 custom-scrollbar space-y-5" style={{ maxHeight: '280px' }}>
+                        {['EASY', 'NORMAL', 'HARD'].map((diffCategory, catIdx) => (
+                          <div key={diffCategory}>
+                            <h4 className={`text-xs font-bold mb-2 flex items-center gap-2 ${catIdx === 0 ? 'text-green-400' : catIdx === 1 ? 'text-yellow-400' : 'text-red-400'}`}>
+                              <span className="w-2 h-2 rounded-full bg-current"></span> {diffCategory} MAPS
+                            </h4>
+                            <div className="grid grid-cols-2 gap-3">
+                              {mapNames.map((m, idx) => {
+                                if (Math.floor(idx / 4) !== catIdx) return null
+                                return (
+                                  <button
+                                    key={m}
+                                    onClick={() => { setMap(idx); playSound('click') }}
+                                    onMouseEnter={() => playSound('hover')}
+                                    className={`map-card relative h-20 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
+                                  >
+                                    <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-25'}`} style={{ imageRendering: 'pixelated' }} />
+                                    <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1">
+                                      <span className="text-sm tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.65rem' }}>{m.toUpperCase()}</span>
+                                    </div>
+                                  </button>
+                                )
+                              })}
                             </div>
-                          </button>
+                          </div>
                         ))}
                       </div>
                     </div>
