@@ -80,7 +80,23 @@ function GameContent() {
 
   // Fetch native token balance on Ritual Testnet
   const { data: balanceData } = useBalance({ address: address, chainId: 1979 })
-  const displayBalance = balanceData ? (Number(balanceData.value) / 1e18).toFixed(4) : '0.0000'
+  const maxBalance = balanceData ? Number(balanceData.value) / 1e18 : 0
+  const displayBalance = maxBalance.toFixed(4)
+  const hasInsufficientBalance = Number(betAmount) > maxBalance
+
+  // Load player name from local storage when wallet connects
+  useEffect(() => {
+    if (address) {
+      const savedName = localStorage.getItem(`ritual_name_${address}`)
+      if (savedName) {
+        setPlayerName(savedName)
+        setNameSet(true)
+      } else {
+        setPlayerName('')
+        setNameSet(false)
+      }
+    }
+  }, [address])
 
   // Dynamically pixelated map
   const [pixelatedMapUrl, setPixelatedMapUrl] = useState<string>('')
@@ -620,14 +636,14 @@ function GameContent() {
                         type="text"
                         value={playerName}
                         onChange={(e) => setPlayerName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && playerName.trim()) { setNameSet(true); playSound('success') } }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && playerName.trim()) { setNameSet(true); if (address) localStorage.setItem(`ritual_name_${address}`, playerName.trim()); playSound('success') } }}
                         placeholder="Enter your name..."
                         maxLength={20}
                         className="w-full pl-9 pr-3 py-2.5 bg-slate-900/60 border border-slate-700/50 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-ritual-primary/50 focus:shadow-[0_0_15px_rgba(168,85,247,0.1)] transition-all"
                       />
                     </div>
                     <button
-                      onClick={() => { if (playerName.trim()) { setNameSet(true); playSound('success') } }}
+                      onClick={() => { if (playerName.trim()) { setNameSet(true); if (address) localStorage.setItem(`ritual_name_${address}`, playerName.trim()); playSound('success') } }}
                       disabled={!playerName.trim()}
                       className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${playerName.trim() ? 'bg-ritual-primary/20 text-ritual-primary border border-ritual-primary/30 hover:bg-ritual-primary/30' : 'bg-slate-800/50 text-slate-600 border border-slate-700/30 cursor-not-allowed'}`}
                     >
@@ -761,11 +777,7 @@ function GameContent() {
                         />
                         <button 
                           onClick={() => {
-                            // Set to half their balance or max balance
-                            if (balanceData) {
-                               const max = Number(balanceData.value) / 1e18;
-                               setBetAmount(Math.floor(max * 100) / 100);
-                            }
+                            setBetAmount(Math.floor(maxBalance * 100) / 100)
                           }}
                           className="px-4 py-3 bg-slate-800 text-ritual-gold font-bold text-sm rounded-xl border border-slate-700 hover:bg-slate-700 transition-colors"
                         >
@@ -773,13 +785,18 @@ function GameContent() {
                         </button>
                       </div>
                       <p className="text-xs text-slate-500 mt-2 text-center">Stake RITUAL tokens to play. Winner takes all!</p>
+                      {hasInsufficientBalance && (
+                        <p className="text-xs text-red-500 font-bold mt-2 text-center animate-pulse">
+                          Insufficient balance! You only have {maxBalance.toFixed(4)} RITUAL.
+                        </p>
+                      )}
                     </div>
 
                     {/* Start Button */}
                     <button 
                       onClick={() => { if (nameSet) { startGame(); playSound('start') } else { playSound('click'); setSetupTab('config') } }}
                       onMouseEnter={() => playSound('hover')}
-                      disabled={!mode || !nameSet}
+                      disabled={!mode || !nameSet || hasInsufficientBalance || Number(betAmount) <= 0}
                       className={`glow-btn w-full mt-auto py-5 rounded-xl font-extrabold text-lg transition-all transform shadow-xl relative z-10 ${mode && nameSet ? 'bg-gradient-to-r from-ritual-primary via-purple-500 to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/50'}`}
                       style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: '0.1em' }}
                     >
