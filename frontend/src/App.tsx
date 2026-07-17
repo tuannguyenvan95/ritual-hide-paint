@@ -734,7 +734,7 @@ function GameContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* ===== ANIMATED BACKGROUND ===== */}
       <div className="game-bg">
         <div className="aurora"></div>
@@ -853,11 +853,11 @@ function GameContent() {
       {/* ===== MAIN CONTENT ===== */}
       <div className="max-w-5xl w-full relative z-10">
         {/* TITLE SECTION */}
-        <div className="text-center mb-10 animate-fade-in-up">
-          <div className="inline-block mb-3">
+        <div className="text-center mb-4 animate-fade-in-up">
+          <div className="inline-block mb-2">
             <span className="pixel-subtitle text-ritual-accent tracking-[0.3em] opacity-80">⬢ ON-CHAIN GAMING ⬢</span>
           </div>
-          <h1 className="neon-title text-5xl md:text-7xl font-black mb-5 bg-gradient-to-r from-ritual-primary via-purple-300 to-ritual-accent bg-clip-text text-transparent tracking-tight leading-tight">
+          <h1 className="neon-title text-4xl md:text-5xl lg:text-6xl font-black mb-2 bg-gradient-to-r from-ritual-primary via-purple-300 to-ritual-accent bg-clip-text text-transparent tracking-tight leading-tight">
             Ritual Hide & Paint
           </h1>
           <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
@@ -874,19 +874,19 @@ function GameContent() {
 
         {!isConnected ? (
           /* ===== NOT CONNECTED: HERO CARD ===== */
-          <div className="flex flex-col items-center justify-center py-8 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-            <div className="game-card p-10 rounded-3xl text-center max-w-md w-full relative overflow-hidden">
+          <div className="flex flex-col items-center justify-center py-2 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+            <div className="game-card p-6 md:p-8 rounded-3xl text-center max-w-md w-full relative overflow-hidden">
               {/* Top glow line */}
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-primary/40 to-transparent"></div>
               {/* Shimmer overlay */}
               <div className="absolute inset-0 animate-shimmer pointer-events-none rounded-3xl"></div>
 
               <div className="relative z-10">
-                <div className="w-24 h-24 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-ritual-primary/20 to-ritual-accent/20 flex items-center justify-center border border-ritual-primary/20 shadow-lg shadow-ritual-primary/10">
-                  <Award className="w-12 h-12 text-ritual-primary drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]" />
+                <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-ritual-primary/20 to-ritual-accent/20 flex items-center justify-center border border-ritual-primary/20 shadow-lg shadow-ritual-primary/10">
+                  <Award className="w-8 h-8 md:w-10 md:h-10 text-ritual-primary drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]" />
                 </div>
-                <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>Ready to Play?</h2>
-                <p className="text-slate-400 mb-8 text-sm leading-relaxed">Connect your wallet to start your pixel art camouflage adventure on the Ritual blockchain.</p>
+                <h2 className="text-xl md:text-2xl font-bold mb-1" style={{ fontFamily: "'Orbitron', sans-serif" }}>Ready to Play?</h2>
+                <p className="text-slate-400 mb-4 text-xs md:text-sm leading-relaxed">Connect your wallet to start your pixel art camouflage adventure on the Ritual blockchain.</p>
                 <button
                   onClick={() => { setShowWalletModal(true); playSound('click') }}
                   onMouseEnter={() => playSound('hover')}
@@ -899,7 +899,7 @@ function GameContent() {
             </div>
 
             {/* Feature cards below */}
-            <div className="grid grid-cols-3 gap-4 mt-8 max-w-lg w-full">
+            <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 max-w-lg w-full">
               {[
                 { emoji: '🎨', label: 'Pixel Paint', desc: 'Draw camouflage' },
                 { emoji: '🤖', label: 'AI Seeker', desc: 'vs Smart Bot' },
@@ -1290,7 +1290,7 @@ function GameContent() {
         )}
 
         {/* Footer */}
-        <div className="mt-8 flex flex-col items-center justify-center gap-4">
+        <div className="mt-4 flex flex-col items-center justify-center gap-2">
           <div className="flex gap-6 items-center">
             <a href="https://discord.gg/ritual" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-indigo-400 transition-colors text-sm font-bold flex items-center gap-2">
               Discord
