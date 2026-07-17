@@ -81,7 +81,7 @@ function GameContent() {
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const [txPending, setTxPending] = useState(false)
-  const [botMessage, setBotMessage] = useState('')
+
   const [showWalletModal, setShowWalletModal] = useState(false)
   const [playerName, setPlayerName] = useState('')
   const [nameSet, setNameSet] = useState(false)
@@ -192,7 +192,7 @@ function GameContent() {
     setGrid(Array(100).fill(0))
     setHiddenPosition(null)
     setGameStatus('waiting')
-    setBotMessage('')
+
   }
 
   const handleCellClick = (index: number) => {
@@ -338,7 +338,7 @@ function GameContent() {
   }
 
   const runBotAILogic = () => {
-    setBotMessage("Bot AI is scanning the environment pixels...")
+
     
     setTimeout(() => {
       if (hiddenCanvasRef.current && hiddenPosition !== null && pixelatedMapUrl) {
@@ -376,7 +376,7 @@ function GameContent() {
             })
             
             if (paintedCount === 0) {
-              setBotMessage("Bot: You didn't paint anything! Found you immediately!")
+
               setGameResult('loss')
               setGameStatus('finished')
               return
@@ -389,10 +389,10 @@ function GameContent() {
             const threshold = isHard ? 60 : 100 
 
             if (distance < threshold) {
-              setBotMessage(`Bot: "I scanned everywhere... but your camouflage (${Math.round(100 - (distance/3))}%) was too perfect for this ${mapDifficulties[map]} map! I lose!"`)
+
               setGameResult('win')
             } else {
-              setBotMessage(`Bot: "Found you! Your colors stood out. Mismatch: ${Math.round(distance)} (Needed < ${threshold} for this map). I win!"`)
+
               setGameResult('loss')
             }
             
