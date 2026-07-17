@@ -917,7 +917,7 @@ function GameContent() {
           /* ===== CONNECTED: GAME SETUP ===== */
           <div className="animate-fade-in-up space-y-6">
             {/* ===== TOP BAR: Wallet + Balance + Player Name ===== */}
-            <div className="game-card rounded-2xl p-5 relative overflow-hidden">
+            <div className="game-card rounded-2xl p-4 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-accent/40 to-transparent"></div>
               <div className="flex flex-wrap items-center gap-4 md:gap-6">
                 {/* Wallet */}
@@ -995,13 +995,13 @@ function GameContent() {
             </div>
 
             {/* ===== TAB CONTENT ===== */}
-            <div className="game-card rounded-3xl p-8 relative overflow-hidden">
+            <div className="game-card rounded-3xl p-5 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-accent/40 to-transparent"></div>
 
               {/* TAB 1: Game Config */}
               {setupTab === 'config' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-fade-in">
-                  <div className="space-y-7 flex flex-col h-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                  <div className="space-y-4 flex flex-col h-full">
                     {/* Opponent */}
                     <div>
                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
@@ -1011,16 +1011,16 @@ function GameContent() {
                         <button 
                           onClick={() => { setOpponent('bot'); playSound('click') }}
                           onMouseEnter={() => playSound('hover')}
-                          className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'bot' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                          className={`flex-1 py-3 rounded-xl font-bold border-2 transition-all ${opponent === 'bot' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
                         >
-                          <Bot className="mx-auto mb-2" size={22} /> <span className="text-sm">AI Bot</span>
+                          <Bot className="mx-auto mb-1" size={20} /> <span className="text-sm">AI Bot</span>
                         </button>
                         <button 
                           onClick={() => { setOpponent('pvp'); playSound('click') }}
                           onMouseEnter={() => playSound('hover')}
-                          className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'pvp' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                          className={`flex-1 py-3 rounded-xl font-bold border-2 transition-all ${opponent === 'pvp' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
                         >
-                          <Users className="mx-auto mb-2" size={22} /> <span className="text-sm">PvP</span>
+                          <Users className="mx-auto mb-1" size={20} /> <span className="text-sm">PvP</span>
                         </button>
                       </div>
                     </div>
@@ -1034,7 +1034,7 @@ function GameContent() {
                         <button 
                           onClick={() => { setMode('hider'); playSound('click') }}
                           onMouseEnter={() => playSound('hover')}
-                          className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'hider' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                          className={`flex-1 py-3 rounded-xl font-bold border-2 transition-all ${mode === 'hider' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
                         >
                           🎨 <span className="text-sm">Hider</span>
                         </button>
@@ -1042,7 +1042,7 @@ function GameContent() {
                           onClick={() => { setMode('seeker'); playSound('click') }}
                           onMouseEnter={() => playSound('hover')}
                           disabled={opponent === 'bot'} 
-                          className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'seeker' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'} ${opponent === 'bot' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                          className={`flex-1 py-3 rounded-xl font-bold border-2 transition-all ${mode === 'seeker' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'} ${opponent === 'bot' ? 'opacity-40 cursor-not-allowed' : ''}`}
                         >
                           🔍 <span className="text-sm">Seeker</span>
                         </button>
@@ -1065,7 +1065,7 @@ function GameContent() {
                     </div>
                   </div>
 
-                  <div className="space-y-7 flex flex-col">
+                  <div className="space-y-4 flex flex-col">
                     {/* Map Selection */}
                     <div className="flex-1 min-h-0 flex flex-col">
                       <div className="flex items-center justify-between mb-3 shrink-0">
@@ -1097,11 +1097,11 @@ function GameContent() {
                               key={m}
                               onClick={() => { setMap(idx); playSound('click') }}
                               onMouseEnter={() => playSound('hover')}
-                              className={`map-card relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
+                              className={`map-card relative h-20 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
                             >
                               <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-25'}`} style={{ imageRendering: 'pixelated' }} />
-                              <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1.5">
-                                <span className="text-sm tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.7rem' }}>{m.toUpperCase()}</span>
+                              <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1">
+                                <span className="text-sm tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.65rem' }}>{m.toUpperCase()}</span>
                               </div>
                             </button>
                           )
@@ -1121,22 +1121,22 @@ function GameContent() {
                           step="0.01"
                           value={betAmount}
                           onChange={(e) => setBetAmount(e.target.value ? Number(e.target.value) : '')}
-                          className="w-full bg-slate-900/50 border-2 border-slate-700/50 focus:border-ritual-gold rounded-xl py-3 px-4 text-ritual-gold font-bold focus:outline-none transition-all focus:shadow-lg focus:shadow-ritual-gold/10 text-lg"
+                          className="w-full bg-slate-900/50 border-2 border-slate-700/50 focus:border-ritual-gold rounded-xl py-2 px-4 text-ritual-gold font-bold focus:outline-none transition-all focus:shadow-lg focus:shadow-ritual-gold/10 text-lg"
                           placeholder="Enter amount..."
                         />
                         <button 
                           onClick={() => {
                             setBetAmount(Math.floor(maxBalance * 100) / 100)
                           }}
-                          className="px-4 py-3 bg-slate-800 text-ritual-gold font-bold text-sm rounded-xl border border-slate-700 hover:bg-slate-700 transition-colors"
+                          className="px-4 py-2 bg-slate-800 text-ritual-gold font-bold text-sm rounded-xl border border-slate-700 hover:bg-slate-700 transition-colors"
                         >
                           MAX
                         </button>
                       </div>
                       <p className="text-xs text-slate-500 mt-2 text-center">Stake RITUAL tokens to play. Winner takes all!</p>
                       {hasInsufficientBalance && (
-                        <p className="text-xs text-red-500 font-bold mt-2 text-center animate-pulse">
-                          Insufficient balance! You only have {maxBalance.toFixed(4)} RITUAL.
+                        <p className="text-[10px] text-red-500 font-bold mt-1 text-center animate-pulse">
+                          Low balance! {maxBalance.toFixed(2)} RITUAL.
                         </p>
                       )}
                     </div>
@@ -1146,10 +1146,10 @@ function GameContent() {
                       onClick={() => { if (nameSet) { startGame() } else { playSound('click'); setSetupTab('config') } }}
                       onMouseEnter={() => playSound('hover')}
                       disabled={!mode || !nameSet || hasInsufficientBalance || Number(betAmount) < 0 || isConfirmingTx}
-                      className={`glow-btn w-full mt-auto py-5 rounded-xl font-extrabold text-lg transition-all transform shadow-xl relative z-10 ${mode && nameSet && !isConfirmingTx ? 'bg-gradient-to-r from-ritual-primary via-purple-500 to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/50'}`}
-                      style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: '0.1em' }}
+                      className={`glow-btn w-full py-3 rounded-xl font-extrabold text-sm transition-all transform shadow-xl relative z-10 ${mode && nameSet && !isConfirmingTx ? 'bg-gradient-to-r from-ritual-primary via-purple-500 to-ritual-accent text-white hover:shadow-ritual-primary/40' : 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/50'}`}
+                      style={{ fontFamily: "'Orbitron', sans-serif" }}
                     >
-                      {isConfirmingTx ? 'PAYING GAS...' : (!nameSet ? 'SET YOUR NAME FIRST' : mode ? '▶ START GAME' : 'SELECT A ROLE')}
+                      {isConfirmingTx ? 'PAYING GAS...' : (!nameSet ? 'SET NAME FIRST' : mode ? '▶ START GAME' : 'SELECT ROLE')}
                     </button>
                   </div>
                 </div>
