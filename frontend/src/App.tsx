@@ -72,6 +72,7 @@ function GameContent() {
 
   const [txPending, setTxPending] = useState(false)
   const [botMessage, setBotMessage] = useState('')
+  const [showWalletModal, setShowWalletModal] = useState(false)
 
   // Dynamically pixelated map
   const [pixelatedMapUrl, setPixelatedMapUrl] = useState<string>('')
@@ -406,24 +407,49 @@ function GameContent() {
           <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto">Paint your ultimate camouflage and fool the AI Seeker!</p>
         </div>
 
+        {showWalletModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setShowWalletModal(false)}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+            <div className="relative bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-ritual-primary/10 animate-[fadeIn_0.2s_ease-out]" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Connect Wallet</h3>
+                <button onClick={() => setShowWalletModal(false)} className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-lg">&times;</button>
+              </div>
+              <p className="text-slate-400 text-sm mb-5">Choose your preferred wallet to connect to Ritual Testnet.</p>
+              <div className="flex flex-col gap-2.5">
+                {connectors.map((connector) => (
+                  <button
+                    key={connector.uid}
+                    onClick={() => { connect({ connector }); setShowWalletModal(false) }}
+                    className="w-full py-3.5 px-4 bg-slate-800/80 hover:bg-ritual-primary/15 text-slate-200 hover:text-white font-semibold rounded-xl border border-slate-700/80 hover:border-ritual-primary/50 shadow-sm hover:shadow-[0_0_20px_rgba(139,92,246,0.15)] transition-all duration-200 flex items-center gap-4"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ritual-primary/30 to-ritual-accent/30 flex items-center justify-center border border-slate-600/50 flex-shrink-0">
+                      <span className="text-lg">💎</span>
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-bold">{connector.name}</div>
+                      <div className="text-xs text-slate-500">Click to connect</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {!isConnected ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-700 text-center max-w-sm w-full shadow-lg">
               <Award className="w-20 h-20 text-ritual-primary mx-auto mb-6 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
               <h2 className="text-2xl font-bold mb-2">Ready to Play?</h2>
               <p className="text-slate-400 mb-8">Connect your wallet to start hiding or seeking.</p>
-              <div className="flex flex-col gap-3 w-full">
-                {connectors.map((connector) => (
-                  <button
-                    key={connector.uid}
-                    onClick={() => connect({ connector })}
-                    className="w-full py-3.5 bg-slate-800/60 hover:bg-ritual-primary/20 text-slate-200 hover:text-white font-semibold rounded-xl border border-slate-700 hover:border-ritual-primary/60 shadow-sm hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-ritual-accent animate-pulse"></div>
-                    Connect {connector.name}
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={() => setShowWalletModal(true)}
+                className="w-full py-4 bg-gradient-to-r from-ritual-primary to-purple-600 hover:from-purple-500 hover:to-ritual-primary text-white font-bold rounded-xl shadow-lg shadow-ritual-primary/25 hover:shadow-ritual-primary/40 transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3"
+              >
+                <Award size={20} />
+                Connect Wallet
+              </button>
             </div>
           </div>
         ) : (
