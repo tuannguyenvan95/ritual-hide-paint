@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
@@ -16,7 +16,6 @@ const mapDiffColors = ['text-green-400 border-green-400/30', 'text-green-400 bor
 
 const queryClient = new QueryClient()
 
-// Helper: Get color distance (Euclidean distance in RGB space)
 function colorDistance(rgb1: number[], rgb2: number[]) {
   return Math.sqrt(
     Math.pow(rgb1[0] - rgb2[0], 2) +
@@ -26,10 +25,9 @@ function colorDistance(rgb1: number[], rgb2: number[]) {
 }
 
 function rgbToHex(r: number, g: number, b: number) {
-  return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)
+  return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).padStart(6, '0')
 }
 
-// 16x16 Character Mask (1 = Paintable character body, 0 = transparent bounding box)
 const CHARACTER_MASK = [
   0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,
   0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,
@@ -59,14 +57,12 @@ function GameContent() {
   const [map, setMap] = useState<number>(0)
   
   const [inGame, setInGame] = useState(false)
-  const [grid, setGrid] = useState<number[]>(Array(100).fill(0)) // 10x10 grid
+  const [grid, setGrid] = useState<number[]>(Array(100).fill(0))
   const [hiddenIndex, setHiddenIndex] = useState<number | null>(null)
   const [gameStatus, setGameStatus] = useState<'waiting' | 'painting' | 'ready' | 'finished'>('waiting')
   
-  // Pixel Paint state (16x16 = 256 pixels)
   const [paintColor, setPaintColor] = useState('#8b5cf6')
   const [activeTool, setActiveTool] = useState<'brush' | 'eraser' | 'picker'>('brush')
-  // Initialize character with a default base color for paintable areas, transparent for non-paintable
   const [characterPixels, setCharacterPixels] = useState<string[]>(
     CHARACTER_MASK.map(m => m === 1 ? '#8b5cf6' : 'transparent')
   ) 
@@ -76,6 +72,26 @@ function GameContent() {
 
   const [txPending, setTxPending] = useState(false)
   const [botMessage, setBotMessage] = useState('')
+
+  // Dynamically pixelated map
+  const [pixelatedMapUrl, setPixelatedMapUrl] = useState<string>('')
+
+  useEffect(() => {
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.src = mapImages[map]
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      // 10 cells * 16 pixels/cell = 160x160 total pixel resolution
+      canvas.width = 160
+      canvas.height = 160
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, 160, 160)
+        setPixelatedMapUrl(canvas.toDataURL('image/png'))
+      }
+    }
+  }, [map])
 
   const startGame = () => {
     if (!mode || !isConnected) return
@@ -98,11 +114,11 @@ function GameContent() {
       if (gameStatus === 'waiting' || opponent === 'bot') return 
       const newGrid = [...grid]
       if (index === hiddenIndex) {
-        newGrid[index] = 2 // Found
+        newGrid[index] = 2 
         setGameStatus('finished')
         alert("You found it! You win the pot!")
       } else {
-        newGrid[index] = 1 // Missed
+        newGrid[index] = 1 
       }
       setGrid(newGrid)
     }
@@ -115,42 +131,43 @@ function GameContent() {
       return
     }
 
-    if (CHARACTER_MASK[idx] === 0) return // Cannot paint outside character body
+    if (CHARACTER_MASK[idx] === 0) return 
 
     const newPixels = [...characterPixels]
     newPixels[idx] = activeTool === 'eraser' ? 'transparent' : paintColor
     setCharacterPixels(newPixels)
   }
 
-  // Eyedropper: Pick color from the map background
   const pickColorFromBackground = (idx: number) => {
-    if (!imgRef.current || !hiddenCanvasRef.current || hiddenIndex === null) return
+    if (!hiddenCanvasRef.current || hiddenIndex === null || !pixelatedMapUrl) return
     
     const canvas = hiddenCanvasRef.current
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     
-    // Ensure canvas is drawn
-    canvas.width = imgRef.current.naturalWidth
-    canvas.height = imgRef.current.naturalHeight
-    ctx.drawImage(imgRef.current, 0, 0)
-    
-    const cellWidth = canvas.width / 10
-    const cellHeight = canvas.height / 10
-    const cellX = hiddenIndex % 10
-    const cellY = Math.floor(hiddenIndex / 10)
-    
-    // Pixel index in 16x16 grid
-    const pxX = idx % 16
-    const pxY = Math.floor(idx / 16)
-    
-    const sampleX = cellX * cellWidth + (pxX / 16) * cellWidth
-    const sampleY = cellY * cellHeight + (pxY / 16) * cellHeight
-    
-    const imgData = ctx.getImageData(sampleX, sampleY, 1, 1)
-    const [r, g, b] = imgData.data
-    const pickedHex = rgbToHex(r, g, b)
-    setPaintColor(pickedHex)
+    const img = new Image()
+    img.src = pixelatedMapUrl
+    img.onload = () => {
+      canvas.width = 160
+      canvas.height = 160
+      ctx.drawImage(img, 0, 0)
+      
+      const cellWidth = 16
+      const cellHeight = 16
+      const cellX = hiddenIndex % 10
+      const cellY = Math.floor(hiddenIndex / 10)
+      
+      const pxX = idx % 16
+      const pxY = Math.floor(idx / 16)
+      
+      const sampleX = cellX * cellWidth + pxX
+      const sampleY = cellY * cellHeight + pxY
+      
+      const imgData = ctx.getImageData(sampleX, sampleY, 1, 1)
+      const [r, g, b] = imgData.data
+      const pickedHex = rgbToHex(r, g, b)
+      setPaintColor(pickedHex)
+    }
   }
 
   const confirmHideAndBotSeek = async () => {
@@ -158,7 +175,6 @@ function GameContent() {
     setGameStatus('ready')
     setTxPending(true)
     
-    // Simulate TX
     await new Promise(resolve => setTimeout(resolve, 1500))
     setTxPending(false)
 
@@ -171,65 +187,68 @@ function GameContent() {
     setBotMessage("Bot AI is scanning the environment pixels...")
     
     setTimeout(() => {
-      if (imgRef.current && hiddenCanvasRef.current && hiddenIndex !== null) {
+      if (hiddenCanvasRef.current && hiddenIndex !== null && pixelatedMapUrl) {
         const canvas = hiddenCanvasRef.current
         const ctx = canvas.getContext('2d')
         if (ctx) {
-          canvas.width = imgRef.current.naturalWidth
-          canvas.height = imgRef.current.naturalHeight
-          ctx.drawImage(imgRef.current, 0, 0)
-          
-          const cellWidth = canvas.width / 10
-          const cellHeight = canvas.height / 10
-          const x = hiddenIndex % 10
-          const y = Math.floor(hiddenIndex / 10)
-          
-          const imgData = ctx.getImageData(x * cellWidth, y * cellHeight, cellWidth, cellHeight)
-          const data = imgData.data
-          
-          let r = 0, g = 0, b = 0
-          for (let i = 0; i < data.length; i += 4) {
-            r += data[i]
-            g += data[i+1]
-            b += data[i+2]
-          }
-          const pixelCount = data.length / 4
-          const avgMapColor = [r/pixelCount, g/pixelCount, b/pixelCount]
-
-          let cr = 0, cg = 0, cb = 0, paintedCount = 0
-          characterPixels.forEach((hex, idx) => {
-            if (CHARACTER_MASK[idx] === 1 && hex !== 'transparent') {
-              const hexNum = hex.replace('#', '')
-              cr += parseInt(hexNum.substring(0,2), 16)
-              cg += parseInt(hexNum.substring(2,4), 16)
-              cb += parseInt(hexNum.substring(4,6), 16)
-              paintedCount++
+          const img = new Image()
+          img.src = pixelatedMapUrl
+          img.onload = () => {
+            canvas.width = 160
+            canvas.height = 160
+            ctx.drawImage(img, 0, 0)
+            
+            const cellWidth = 16
+            const cellHeight = 16
+            const x = hiddenIndex % 10
+            const y = Math.floor(hiddenIndex / 10)
+            
+            const imgData = ctx.getImageData(x * cellWidth, y * cellHeight, cellWidth, cellHeight)
+            const data = imgData.data
+            
+            let r = 0, g = 0, b = 0
+            for (let i = 0; i < data.length; i += 4) {
+              r += data[i]
+              g += data[i+1]
+              b += data[i+2]
             }
-          })
-          
-          if (paintedCount === 0) {
-            setBotMessage("Bot: You didn't paint anything! Found you immediately!")
+            const pixelCount = data.length / 4
+            const avgMapColor = [r/pixelCount, g/pixelCount, b/pixelCount]
+
+            let cr = 0, cg = 0, cb = 0, paintedCount = 0
+            characterPixels.forEach((hex, idx) => {
+              if (CHARACTER_MASK[idx] === 1 && hex !== 'transparent') {
+                const hexNum = hex.replace('#', '')
+                cr += parseInt(hexNum.substring(0,2), 16)
+                cg += parseInt(hexNum.substring(2,4), 16)
+                cb += parseInt(hexNum.substring(4,6), 16)
+                paintedCount++
+              }
+            })
+            
+            if (paintedCount === 0) {
+              setBotMessage("Bot: You didn't paint anything! Found you immediately!")
+              setGameStatus('finished')
+              return
+            }
+
+            const avgCharColor = [cr/paintedCount, cg/paintedCount, cb/paintedCount]
+            const distance = colorDistance(avgMapColor, avgCharColor)
+            
+            const isHard = mapDifficulties[map] === 'Hard'
+            const threshold = isHard ? 60 : 100 
+
+            if (distance < threshold) {
+              setBotMessage(`Bot: "I scanned everywhere... but your camouflage (${Math.round(100 - (distance/3))}%) was too perfect for this ${mapDifficulties[map]} map! I lose!"`)
+            } else {
+              setBotMessage(`Bot: "Found you! Your colors stood out. Mismatch: ${Math.round(distance)} (Needed < ${threshold} for this map). I win!"`)
+              const newGrid = [...grid]
+              newGrid[hiddenIndex] = 2 
+              setGrid(newGrid)
+            }
+            
             setGameStatus('finished')
-            return
           }
-
-          const avgCharColor = [cr/paintedCount, cg/paintedCount, cb/paintedCount]
-          const distance = colorDistance(avgMapColor, avgCharColor)
-          
-          // Harder map requires lower distance (better camouflage)
-          const isHard = mapDifficulties[map] === 'Hard'
-          const threshold = isHard ? 60 : 100 
-
-          if (distance < threshold) {
-            setBotMessage(`Bot: "I scanned everywhere... but your camouflage (${Math.round(100 - (distance/3))}%) was too perfect for this ${mapDifficulties[map]} map! I lose!"`)
-          } else {
-            setBotMessage(`Bot: "Found you! Your colors stood out. Mismatch: ${Math.round(distance)} (Needed < ${threshold} for this map). I win!"`)
-            const newGrid = [...grid]
-            newGrid[hiddenIndex] = 2 
-            setGrid(newGrid)
-          }
-          
-          setGameStatus('finished')
         }
       }
     }, 2500)
@@ -258,8 +277,8 @@ function GameContent() {
               {gameStatus === 'finished' && <span className="text-ritual-primary font-bold">Game Over</span>}
             </div>
 
-            <div className="flex-1 relative m-8 rounded-xl overflow-hidden shadow-2xl border border-slate-600 max-w-3xl max-h-[800px] aspect-square mx-auto my-auto">
-              <img ref={imgRef} src={mapImages[map]} crossOrigin="anonymous" alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+            <div className="flex-1 relative m-8 rounded-xl overflow-hidden shadow-2xl border border-slate-600 max-w-3xl max-h-[800px] aspect-square mx-auto my-auto" style={{ imageRendering: 'pixelated' }}>
+              {pixelatedMapUrl && <img ref={imgRef} src={pixelatedMapUrl} alt="Map" className="absolute inset-0 w-full h-full object-cover opacity-90" />}
               
               <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 gap-0">
                 {grid.map((cellState, index) => (
@@ -268,12 +287,12 @@ function GameContent() {
                     onClick={() => handleCellClick(index)}
                     className={`
                       border border-white/10 hover:border-white/50 hover:bg-white/10 cursor-pointer transition-all flex items-center justify-center
-                      ${hiddenIndex === index ? 'bg-black/20 border-ritual-primary ring-2 ring-ritual-primary ring-inset backdrop-blur-sm' : ''}
+                      ${hiddenIndex === index ? 'bg-black/10 border-ritual-primary ring-2 ring-ritual-primary ring-inset backdrop-blur-sm' : ''}
                       ${cellState === 2 ? 'bg-red-500/50 backdrop-blur-sm' : ''}
                     `}
                   >
                     {hiddenIndex === index && gameStatus !== 'waiting' && (
-                      <div className="w-3/4 h-3/4 grid grid-cols-16 grid-rows-16 shadow-2xl drop-shadow-2xl" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
+                      <div className="w-full h-full grid grid-cols-16 grid-rows-16 shadow-2xl drop-shadow-2xl" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
                          {characterPixels.map((color, i) => (
                            <div key={i} style={{ backgroundColor: CHARACTER_MASK[i] ? color : 'transparent' }} className="w-full h-full"></div>
                          ))}
@@ -319,30 +338,28 @@ function GameContent() {
                   </button>
                 </div>
 
-                <div className="relative w-full aspect-square rounded-xl border-2 border-slate-600 overflow-hidden mb-6 shadow-inner bg-slate-900">
-                  {/* Background image mapped to this specific cell for tracing */}
-                  {hiddenIndex !== null && (
+                <div className="relative w-full aspect-square rounded-xl border-2 border-slate-600 overflow-hidden mb-6 shadow-inner bg-slate-900" style={{ imageRendering: 'pixelated' }}>
+                  {hiddenIndex !== null && pixelatedMapUrl && (
                      <div 
-                       className="absolute inset-0 opacity-40 pointer-events-none"
+                       className="absolute inset-0 opacity-60 pointer-events-none"
                        style={{
-                         backgroundImage: `url(${mapImages[map]})`,
-                         backgroundSize: '1000% 1000%', // Because 10x10 grid
+                         backgroundImage: `url(${pixelatedMapUrl})`,
+                         backgroundSize: '1000% 1000%', 
                          backgroundPosition: `${(hiddenIndex % 10) * 11.11}% ${Math.floor(hiddenIndex / 10) * 11.11}%`
                        }}
                      />
                   )}
                   
-                  {/* 16x16 Pixel Art Canvas */}
                   <div className="absolute inset-0 grid grid-cols-16 grid-rows-16 z-10" style={{ gridTemplateColumns: 'repeat(16, minmax(0, 1fr))', gridTemplateRows: 'repeat(16, minmax(0, 1fr))' }}>
                     {characterPixels.map((color, i) => (
                       <div 
                         key={i} 
                         onMouseDown={() => handlePaintPixel(i)}
                         onMouseEnter={(e) => { if(e.buttons === 1) handlePaintPixel(i) }}
-                        style={{ backgroundColor: CHARACTER_MASK[i] ? (color === 'transparent' ? 'rgba(255,255,255,0.1)' : color) : 'rgba(0,0,0,0.6)' }}
+                        style={{ backgroundColor: CHARACTER_MASK[i] ? (color === 'transparent' ? 'rgba(255,255,255,0.05)' : color) : 'transparent' }}
                         className={`
                           border-[0.2px] border-white/10 transition-colors
-                          ${CHARACTER_MASK[i] ? 'cursor-crosshair hover:border-white/50' : 'cursor-not-allowed opacity-30'}
+                          ${CHARACTER_MASK[i] ? 'cursor-crosshair hover:border-white/50' : 'cursor-crosshair'}
                         `}
                       ></div>
                     ))}
@@ -467,7 +484,7 @@ function GameContent() {
                       onClick={() => setMap(idx)}
                       className={`relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all group ${map === idx ? 'border-ritual-primary ring-4 ring-ritual-primary/20 text-white' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}
                     >
-                      <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-60' : 'opacity-30 group-hover:opacity-40'}`} />
+                      <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-60' : 'opacity-30 group-hover:opacity-40'}`} style={{ imageRendering: 'pixelated' }} />
                       <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1">
                         <span className="text-lg tracking-wide drop-shadow-md font-bold">{m}</span>
                         <span className={`text-xs px-2 py-0.5 rounded-full border bg-black/50 backdrop-blur-sm ${mapDiffColors[idx]}`}>
@@ -491,16 +508,6 @@ function GameContent() {
         )}
       </div>
     </div>
-  )
-}
-
-function App() {
-  return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <GameContent />
-      </QueryClientProvider>
-    </WagmiProvider>
   )
 }
 
