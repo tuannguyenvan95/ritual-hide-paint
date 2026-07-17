@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
@@ -76,6 +76,64 @@ function GameContent() {
 
   // Dynamically pixelated map
   const [pixelatedMapUrl, setPixelatedMapUrl] = useState<string>('')
+
+  // ===== SOUND EFFECTS SYSTEM (Web Audio API) =====
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const getAudioCtx = useCallback(() => {
+    if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
+    return audioCtxRef.current
+  }, [])
+
+  const playSound = useCallback((type: 'click' | 'hover' | 'success' | 'start' | 'paint') => {
+    try {
+      const ctx = getAudioCtx()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      switch (type) {
+        case 'click':
+          osc.type = 'square'; osc.frequency.setValueAtTime(600, ctx.currentTime)
+          osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.1)
+          gain.gain.setValueAtTime(0.08, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12)
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.12)
+          break
+        case 'hover':
+          osc.type = 'sine'; osc.frequency.setValueAtTime(800, ctx.currentTime)
+          gain.gain.setValueAtTime(0.03, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06)
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.06)
+          break
+        case 'success':
+          osc.type = 'square'
+          osc.frequency.setValueAtTime(523, ctx.currentTime)
+          osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1)
+          osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2)
+          gain.gain.setValueAtTime(0.08, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35)
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.35)
+          break
+        case 'start':
+          osc.type = 'square'
+          osc.frequency.setValueAtTime(262, ctx.currentTime)
+          osc.frequency.setValueAtTime(330, ctx.currentTime + 0.08)
+          osc.frequency.setValueAtTime(392, ctx.currentTime + 0.16)
+          osc.frequency.setValueAtTime(523, ctx.currentTime + 0.24)
+          gain.gain.setValueAtTime(0.1, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4)
+          break
+        case 'paint':
+          osc.type = 'triangle'; osc.frequency.setValueAtTime(400 + Math.random() * 200, ctx.currentTime)
+          gain.gain.setValueAtTime(0.04, ctx.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05)
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.05)
+          break
+      }
+    } catch {}
+  }, [getAudioCtx])
 
   useEffect(() => {
     const img = new Image()
@@ -397,148 +455,233 @@ function GameContent() {
   }
 
   return (
-    <div className="min-h-screen bg-ritual-dark flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-ritual-primary/20 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-ritual-accent/20 blur-[120px] rounded-full pointer-events-none"></div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* ===== ANIMATED BACKGROUND ===== */}
+      <div className="game-bg">
+        <div className="aurora"></div>
+        <div className="scanlines"></div>
+      </div>
 
-      <div className="max-w-5xl w-full bg-slate-800/40 p-10 rounded-3xl border border-slate-700 backdrop-blur-xl shadow-2xl relative z-10">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-ritual-primary via-purple-400 to-ritual-accent bg-clip-text text-transparent tracking-tight">Ritual Hide & Paint</h1>
-          <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto">Paint your ultimate camouflage and fool the AI Seeker!</p>
-        </div>
+      {/* ===== FLOATING PIXEL PARTICLES ===== */}
+      <div className="fixed inset-0 pointer-events-none z-[1]">
+        {[...Array(8)].map((_, i) => <div key={i} className="pixel-particle" />)}
+      </div>
 
-        {showWalletModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setShowWalletModal(false)}>
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
-            <div className="relative bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-ritual-primary/10 animate-[fadeIn_0.2s_ease-out]" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white">Connect Wallet</h3>
-                <button onClick={() => setShowWalletModal(false)} className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-lg">&times;</button>
-              </div>
-              <p className="text-slate-400 text-sm mb-5">Choose your preferred wallet to connect to Ritual Testnet.</p>
-              <div className="flex flex-col gap-2.5">
-                {connectors.map((connector) => (
-                  <button
-                    key={connector.uid}
-                    onClick={() => { connect({ connector }); setShowWalletModal(false) }}
-                    className="w-full py-3.5 px-4 bg-slate-800/80 hover:bg-ritual-primary/15 text-slate-200 hover:text-white font-semibold rounded-xl border border-slate-700/80 hover:border-ritual-primary/50 shadow-sm hover:shadow-[0_0_20px_rgba(139,92,246,0.15)] transition-all duration-200 flex items-center gap-4"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-600/50 flex-shrink-0 overflow-hidden">
-                      {connector.icon ? (
-                        <img src={connector.icon} alt={connector.name} className="w-7 h-7 object-contain" />
-                      ) : (
-                        <Award size={20} className="text-ritual-primary" />
-                      )}
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-bold">{connector.name}</div>
-                      <div className="text-xs text-slate-500">Click to connect</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+      {/* ===== WALLET MODAL ===== */}
+      {showWalletModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setShowWalletModal(false)}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
+          <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-700/50 rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-ritual-primary/10 animate-fade-in-up" onClick={e => e.stopPropagation()}>
+            <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-primary/50 to-transparent"></div>
+            </div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white" style={{ fontFamily: "'Orbitron', sans-serif" }}>Connect Wallet</h3>
+              <button onClick={() => { setShowWalletModal(false); playSound('click') }} className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-lg">&times;</button>
+            </div>
+            <p className="text-slate-400 text-sm mb-5">Choose your preferred wallet to connect to Ritual Testnet.</p>
+            <div className="flex flex-col gap-2.5">
+              {connectors.map((connector) => (
+                <button
+                  key={connector.uid}
+                  onClick={() => { connect({ connector }); setShowWalletModal(false); playSound('success') }}
+                  onMouseEnter={() => playSound('hover')}
+                  className="w-full py-3.5 px-4 bg-slate-800/60 hover:bg-ritual-primary/10 text-slate-200 hover:text-white font-semibold rounded-xl border border-slate-700/60 hover:border-ritual-primary/40 shadow-sm hover:shadow-[0_0_25px_rgba(168,85,247,0.12)] transition-all duration-200 flex items-center gap-4"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-600/40 flex-shrink-0 overflow-hidden">
+                    {connector.icon ? (
+                      <img src={connector.icon} alt={connector.name} className="w-7 h-7 object-contain" />
+                    ) : (
+                      <Award size={20} className="text-ritual-primary" />
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-bold">{connector.name}</div>
+                    <div className="text-xs text-slate-500">Click to connect</div>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* ===== MAIN CONTENT ===== */}
+      <div className="max-w-5xl w-full relative z-10">
+        {/* TITLE SECTION */}
+        <div className="text-center mb-10 animate-fade-in-up">
+          <div className="inline-block mb-3">
+            <span className="pixel-subtitle text-ritual-accent tracking-[0.3em] opacity-80">⬢ ON-CHAIN GAMING ⬢</span>
+          </div>
+          <h1 className="neon-title text-5xl md:text-7xl font-black mb-5 bg-gradient-to-r from-ritual-primary via-purple-300 to-ritual-accent bg-clip-text text-transparent tracking-tight leading-tight">
+            Ritual Hide & Paint
+          </h1>
+          <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+            Paint your ultimate <span className="text-ritual-accent font-semibold">camouflage</span> and fool the <span className="text-ritual-pink font-semibold">AI Seeker</span>
+          </p>
+          <div className="flex items-center justify-center gap-4 mt-4 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Ritual Testnet</span>
+            <span>•</span>
+            <span>Chain ID 1979</span>
+            <span>•</span>
+            <span className="text-ritual-gold">🏆 Win RITUAL tokens</span>
+          </div>
+        </div>
 
         {!isConnected ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="bg-slate-900/50 p-8 rounded-2xl border border-slate-700 text-center max-w-sm w-full shadow-lg">
-              <Award className="w-20 h-20 text-ritual-primary mx-auto mb-6 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
-              <h2 className="text-2xl font-bold mb-2">Ready to Play?</h2>
-              <p className="text-slate-400 mb-8">Connect your wallet to start hiding or seeking.</p>
-              <button
-                onClick={() => setShowWalletModal(true)}
-                className="w-full py-4 bg-gradient-to-r from-ritual-primary to-purple-600 hover:from-purple-500 hover:to-ritual-primary text-white font-bold rounded-xl shadow-lg shadow-ritual-primary/25 hover:shadow-ritual-primary/40 transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3"
-              >
-                <Award size={20} />
-                Connect Wallet
-              </button>
+          /* ===== NOT CONNECTED: HERO CARD ===== */
+          <div className="flex flex-col items-center justify-center py-8 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+            <div className="game-card p-10 rounded-3xl text-center max-w-md w-full relative overflow-hidden">
+              {/* Top glow line */}
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-primary/40 to-transparent"></div>
+              {/* Shimmer overlay */}
+              <div className="absolute inset-0 animate-shimmer pointer-events-none rounded-3xl"></div>
+
+              <div className="relative z-10">
+                <div className="w-24 h-24 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-ritual-primary/20 to-ritual-accent/20 flex items-center justify-center border border-ritual-primary/20 shadow-lg shadow-ritual-primary/10">
+                  <Award className="w-12 h-12 text-ritual-primary drop-shadow-[0_0_15px_rgba(168,85,247,0.6)]" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Orbitron', sans-serif" }}>Ready to Play?</h2>
+                <p className="text-slate-400 mb-8 text-sm leading-relaxed">Connect your wallet to start your pixel art camouflage adventure on the Ritual blockchain.</p>
+                <button
+                  onClick={() => { setShowWalletModal(true); playSound('click') }}
+                  onMouseEnter={() => playSound('hover')}
+                  className="glow-btn w-full py-4 bg-gradient-to-r from-ritual-primary to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-ritual-primary/25 hover:shadow-ritual-primary/40 transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center gap-3 relative z-10"
+                >
+                  <Award size={20} />
+                  <span style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem', letterSpacing: '0.05em' }}>CONNECT WALLET</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Feature cards below */}
+            <div className="grid grid-cols-3 gap-4 mt-8 max-w-lg w-full">
+              {[
+                { emoji: '🎨', label: 'Pixel Paint', desc: 'Draw camouflage' },
+                { emoji: '🤖', label: 'AI Seeker', desc: 'vs Smart Bot' },
+                { emoji: '💰', label: 'Win Rewards', desc: 'Earn RITUAL' },
+              ].map((f, i) => (
+                <div key={i} className="game-card rounded-xl p-4 text-center" style={{ animationDelay: `${0.3 + i * 0.1}s` }}>
+                  <div className="text-2xl mb-2">{f.emoji}</div>
+                  <div className="text-xs font-bold text-white mb-0.5" style={{ fontFamily: "'Orbitron', sans-serif" }}>{f.label}</div>
+                  <div className="text-[10px] text-slate-500">{f.desc}</div>
+                </div>
+              ))}
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="space-y-8">
-              <div className="flex items-center justify-between bg-slate-900/50 p-4 rounded-xl border border-slate-700 shadow-inner">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-ritual-primary to-ritual-accent flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">{address?.slice(2, 4)}</span>
+          /* ===== CONNECTED: GAME SETUP ===== */
+          <div className="game-card rounded-3xl p-8 md:p-10 animate-fade-in-up relative overflow-hidden">
+            {/* Top glow line */}
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-ritual-accent/40 to-transparent"></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-7">
+                {/* Wallet info */}
+                <div className="flex items-center justify-between bg-slate-900/60 p-4 rounded-xl border border-slate-700/50 shadow-inner">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-ritual-primary to-ritual-accent flex items-center justify-center shadow-lg shadow-ritual-primary/20">
+                      <span className="text-white text-xs font-bold">{address?.slice(2, 4)}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-300 font-mono text-sm block">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                      <span className="text-[10px] text-green-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>Connected</span>
+                    </div>
                   </div>
-                  <span className="text-slate-300 font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                  <button onClick={() => { disconnect(); playSound('click') }} className="text-sm px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors font-medium border border-red-500/10">Disconnect</button>
                 </div>
-                <button onClick={() => disconnect()} className="text-sm px-3 py-1 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors font-medium">Disconnect</button>
-              </div>
 
-              <div>
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Users className="text-ritual-accent"/> Select Opponent</h3>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setOpponent('bot')}
-                    className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'bot' ? 'border-ritual-accent bg-ritual-accent/20 text-white shadow-lg' : 'border-slate-700 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
-                  >
-                    <Bot className="mx-auto mb-2" /> Play vs AI Bot
-                  </button>
-                  <button 
-                    onClick={() => setOpponent('pvp')}
-                    className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'pvp' ? 'border-ritual-primary bg-ritual-primary/20 text-white shadow-lg' : 'border-slate-700 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
-                  >
-                    <Users className="mx-auto mb-2" /> Play PvP
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Crosshair className="text-ritual-primary"/> Select Role</h3>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setMode('hider')}
-                    className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'hider' ? 'border-ritual-primary bg-ritual-primary/20 text-white shadow-lg' : 'border-slate-700 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
-                  >
-                    Hider
-                  </button>
-                  <button 
-                    onClick={() => setMode('seeker')}
-                    disabled={opponent === 'bot'} 
-                    className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'seeker' ? 'border-ritual-accent bg-ritual-accent/20 text-white shadow-lg' : 'border-slate-700 text-slate-400 hover:border-slate-500 bg-slate-900/50'} ${opponent === 'bot' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    Seeker
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-8 flex flex-col">
-              <div>
-                <h3 className="text-xl font-bold mb-4">Select Map & Difficulty</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {mapNames.map((m, idx) => (
-                    <button
-                      key={m}
-                      onClick={() => setMap(idx)}
-                      className={`relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all group ${map === idx ? 'border-ritual-primary ring-4 ring-ritual-primary/20 text-white' : 'border-slate-700 text-slate-300 hover:border-slate-500'}`}
+                {/* Opponent */}
+                <div>
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                    <Users className="text-ritual-accent" size={18}/> SELECT OPPONENT
+                  </h3>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => { setOpponent('bot'); playSound('click') }}
+                      onMouseEnter={() => playSound('hover')}
+                      className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'bot' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
                     >
-                      <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-60' : 'opacity-30 group-hover:opacity-40'}`} style={{ imageRendering: 'pixelated' }} />
-                      <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1">
-                        <span className="text-lg tracking-wide drop-shadow-md font-bold">{m}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border bg-black/50 backdrop-blur-sm ${mapDiffColors[idx]}`}>
-                          {mapDifficulties[idx]}
-                        </span>
-                      </div>
+                      <Bot className="mx-auto mb-2" size={22} /> <span className="text-sm">vs AI Bot</span>
                     </button>
-                  ))}
+                    <button 
+                      onClick={() => { setOpponent('pvp'); playSound('click') }}
+                      onMouseEnter={() => playSound('hover')}
+                      className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${opponent === 'pvp' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                    >
+                      <Users className="mx-auto mb-2" size={22} /> <span className="text-sm">PvP</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Role */}
+                <div>
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>
+                    <Crosshair className="text-ritual-primary" size={18}/> SELECT ROLE
+                  </h3>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => { setMode('hider'); playSound('click') }}
+                      onMouseEnter={() => playSound('hover')}
+                      className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'hider' ? 'border-ritual-primary bg-ritual-primary/10 text-white shadow-lg shadow-ritual-primary/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'}`}
+                    >
+                      🎨 <span className="text-sm">Hider</span>
+                    </button>
+                    <button 
+                      onClick={() => { setMode('seeker'); playSound('click') }}
+                      onMouseEnter={() => playSound('hover')}
+                      disabled={opponent === 'bot'} 
+                      className={`flex-1 py-4 rounded-xl font-bold border-2 transition-all ${mode === 'seeker' ? 'border-ritual-accent bg-ritual-accent/10 text-white shadow-lg shadow-ritual-accent/10' : 'border-slate-700/50 text-slate-400 hover:border-slate-500 bg-slate-900/50'} ${opponent === 'bot' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                    >
+                      🔍 <span className="text-sm">Seeker</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <button 
-                onClick={startGame}
-                disabled={!mode}
-                className={`w-full mt-auto py-5 rounded-xl font-extrabold text-xl transition-all transform shadow-xl ${mode ? 'bg-gradient-to-r from-ritual-primary to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
-              >
-                {mode ? `Start Game` : 'Select a Role'}
-              </button>
+              <div className="space-y-7 flex flex-col">
+                {/* Map Selection */}
+                <div>
+                  <h3 className="text-lg font-bold mb-3" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.85rem' }}>SELECT MAP</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {mapNames.map((m, idx) => (
+                      <button
+                        key={m}
+                        onClick={() => { setMap(idx); playSound('click') }}
+                        onMouseEnter={() => playSound('hover')}
+                        className={`map-card relative h-28 rounded-xl font-semibold border-2 overflow-hidden transition-all ${map === idx ? 'border-ritual-primary ring-2 ring-ritual-primary/30 text-white' : 'border-slate-700/50 text-slate-300 hover:border-slate-500'}`}
+                      >
+                        <img src={mapImages[idx]} alt={m} className={`absolute inset-0 w-full h-full object-cover transition-opacity ${map === idx ? 'opacity-50' : 'opacity-25'}`} style={{ imageRendering: 'pixelated' }} />
+                        <div className="relative z-10 flex flex-col items-center justify-center h-full gap-1.5">
+                          <span className="text-base tracking-wide drop-shadow-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif", fontSize: '0.7rem' }}>{m.toUpperCase()}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border bg-black/60 backdrop-blur-sm ${mapDiffColors[idx]}`}>
+                            {mapDifficulties[idx]}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Start Button */}
+                <button 
+                  onClick={() => { startGame(); playSound('start') }}
+                  onMouseEnter={() => playSound('hover')}
+                  disabled={!mode}
+                  className={`glow-btn w-full mt-auto py-5 rounded-xl font-extrabold text-lg transition-all transform shadow-xl relative z-10 ${mode ? 'bg-gradient-to-r from-ritual-primary via-purple-500 to-ritual-accent text-white hover:shadow-ritual-primary/40 hover:-translate-y-1' : 'bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-700/50'}`}
+                  style={{ fontFamily: "'Orbitron', sans-serif", letterSpacing: '0.1em' }}
+                >
+                  {mode ? '▶ START GAME' : 'SELECT A ROLE'}
+                </button>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Footer */}
+        <div className="text-center mt-8 text-slate-600 text-xs" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '8px', letterSpacing: '0.1em' }}>
+          POWERED BY RITUAL NETWORK • BUILT WITH AI
+        </div>
       </div>
     </div>
   )
