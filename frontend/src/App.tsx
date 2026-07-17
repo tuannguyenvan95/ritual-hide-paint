@@ -1265,7 +1265,7 @@ function GameContent() {
                           <div className="flex justify-between"><span className="text-slate-400">Name</span><span className="text-white font-bold">{mapNames[map]}</span></div>
                           <div className="flex justify-between"><span className="text-slate-400">Difficulty</span><span className={`font-bold ${mapDiffColors[map].split(' ')[0]}`}>{mapDifficulties[map]}</span></div>
                           <div className="flex justify-between"><span className="text-slate-400">Grid</span><span className="text-white font-bold">10 × 10</span></div>
-                          <div className="flex justify-between"><span className="text-slate-400">Resolution</span><span className="text-white font-bold">160 × 160 px</span></div>
+                          <div className="flex justify-between"><span className="text-slate-400">Resolution</span><span className="text-white font-bold">70 × 70 px</span></div>
                         </div>
                       </div>
                       <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-700/30">
