@@ -1334,8 +1334,8 @@ function GameContent() {
             >
               <X size={24} />
             </button>
-            <div className="relative rounded-2xl overflow-hidden border-4 border-slate-700 shadow-2xl shadow-ritual-primary/20" style={{ imageRendering: 'pixelated' }}>
-              <img src={pixelatedMapUrl} alt="Full Map" className="max-w-full max-h-[85vh] object-contain" />
+            <div className="relative rounded-2xl overflow-hidden border-4 border-slate-700 shadow-2xl shadow-ritual-primary/20 flex-shrink-0" style={{ width: 'min(75vh, 90vw)', height: 'min(75vh, 90vw)', imageRendering: 'pixelated' }}>
+              <img src={pixelatedMapUrl} alt="Full Map" className="w-full h-full object-cover" />
               <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 pointer-events-none">
                 {Array(100).fill(0).map((_, i) => (
                   <div key={i} className="border border-white/10"></div>
