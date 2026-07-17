@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance, useSendTransaction } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
-import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette, Move, Trophy, AlertCircle, Timer } from 'lucide-react'
+import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette, Move, Trophy, AlertCircle, Timer, X, ZoomIn } from 'lucide-react'
 
 import forestMap from './assets/forest_map.jpg'
 import cityMap from './assets/city_map.jpg'
@@ -108,6 +108,8 @@ function GameContent() {
 
   const [txPending, setTxPending] = useState(false)
   const [isConfirmingTx, setIsConfirmingTx] = useState(false)
+  
+  const [showFullMap, setShowFullMap] = useState(false)
 
   const [showWalletModal, setShowWalletModal] = useState(false)
   const [playerName, setPlayerName] = useState('')
@@ -1233,14 +1235,24 @@ function GameContent() {
                             </button>
                           ))}
                       </div>
-                      <div className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl aspect-square max-w-[360px] mx-auto mt-2" style={{ imageRendering: 'pixelated' }}>
-                        {pixelatedMapUrl && <img src={pixelatedMapUrl} alt="Map Preview" className="w-full h-full object-cover" />}
+                      <div 
+                        className="relative rounded-xl overflow-hidden border-2 border-slate-600 shadow-2xl aspect-square max-w-[360px] mx-auto mt-2 cursor-pointer group" 
+                        style={{ imageRendering: 'pixelated' }}
+                        onClick={() => { setShowFullMap(true); playSound('click') }}
+                      >
+                        {pixelatedMapUrl && <img src={pixelatedMapUrl} alt="Map Preview" className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />}
                         <div className="absolute inset-0 grid grid-cols-10 grid-rows-10">
                           {Array(100).fill(0).map((_, i) => (
-                            <div key={i} className="border border-white/5 hover:bg-white/10 transition-colors"></div>
+                            <div key={i} className="border border-white/5 group-hover:border-white/10 transition-colors"></div>
                           ))}
                         </div>
-                        <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-600">
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="bg-slate-900/80 px-4 py-2 rounded-full border border-slate-600 flex items-center gap-2 text-white">
+                            <ZoomIn size={16} />
+                            <span className="text-sm font-bold">Click to Enlarge</span>
+                          </div>
+                        </div>
+                        <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-600 group-hover:bottom-2 transition-all">
                           <span className={`text-xs font-bold ${mapDiffColors[map].split(' ')[0]}`}>{mapDifficulties[map]}</span>
                         </div>
                       </div>
@@ -1311,6 +1323,34 @@ function GameContent() {
           </div>
         </div>
       </div>
+
+      {/* FULL MAP MODAL */}
+      {showFullMap && pixelatedMapUrl && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in" onClick={() => setShowFullMap(false)}>
+          <div className="relative flex flex-col items-center max-w-[95vw] max-h-[95vh]">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowFullMap(false) }}
+              className="absolute -top-12 right-0 text-white hover:text-ritual-primary transition-colors bg-slate-900/80 hover:bg-slate-900 p-2 rounded-full border border-slate-600 hover:border-ritual-primary shadow-lg"
+            >
+              <X size={24} />
+            </button>
+            <div className="relative rounded-2xl overflow-hidden border-4 border-slate-700 shadow-2xl shadow-ritual-primary/20" style={{ imageRendering: 'pixelated' }}>
+              <img src={pixelatedMapUrl} alt="Full Map" className="max-w-full max-h-[85vh] object-contain" />
+              <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 pointer-events-none">
+                {Array(100).fill(0).map((_, i) => (
+                  <div key={i} className="border border-white/10"></div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 bg-slate-900/80 backdrop-blur px-6 py-3 rounded-2xl border border-slate-700 flex items-center gap-4 shadow-lg shadow-black">
+              <span className="text-white font-bold text-lg" style={{ fontFamily: "'Orbitron', sans-serif" }}>{mapNames[map].toUpperCase()}</span>
+              <span className="w-1.5 h-6 bg-slate-600 rounded-full"></span>
+              <span className={`text-sm font-bold px-3 py-1 rounded-md ${mapDiffColors[map]}`}>{mapDifficulties[map]}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
