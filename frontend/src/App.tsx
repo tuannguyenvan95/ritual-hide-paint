@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { WagmiProvider, useAccount, useConnect, useDisconnect, useBalance } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from './config/web3'
-import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette } from 'lucide-react'
+import { Brush, Crosshair, Award, CheckCircle2, Eraser, Bot, Users, Pipette, User, Wallet, Eye, Palette, Move } from 'lucide-react'
 
 import forestMap from './assets/forest_map.jpg'
 import cityMap from './assets/city_map.jpg'
