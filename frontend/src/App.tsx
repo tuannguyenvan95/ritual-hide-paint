@@ -423,8 +423,12 @@ function GameContent() {
                     onClick={() => { connect({ connector }); setShowWalletModal(false) }}
                     className="w-full py-3.5 px-4 bg-slate-800/80 hover:bg-ritual-primary/15 text-slate-200 hover:text-white font-semibold rounded-xl border border-slate-700/80 hover:border-ritual-primary/50 shadow-sm hover:shadow-[0_0_20px_rgba(139,92,246,0.15)] transition-all duration-200 flex items-center gap-4"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ritual-primary/30 to-ritual-accent/30 flex items-center justify-center border border-slate-600/50 flex-shrink-0">
-                      <span className="text-lg">💎</span>
+                    <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-600/50 flex-shrink-0 overflow-hidden">
+                      {connector.icon ? (
+                        <img src={connector.icon} alt={connector.name} className="w-7 h-7 object-contain" />
+                      ) : (
+                        <Award size={20} className="text-ritual-primary" />
+                      )}
                     </div>
                     <div className="text-left">
                       <div className="text-sm font-bold">{connector.name}</div>
