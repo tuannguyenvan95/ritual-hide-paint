@@ -89,6 +89,8 @@ function GameContent() {
   const [betAmount, setBetAmount] = useState<number | string>(1)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [leaderboard, setLeaderboard] = useState<{name: string, wins: number}[]>([])
+  const [isMatchmaking, setIsMatchmaking] = useState(false)
+  const [matchmakeTimer, setMatchmakeTimer] = useState(0)
 
   useEffect(() => {
     const saved = localStorage.getItem('ritual_leaderboard')
@@ -220,14 +222,37 @@ function GameContent() {
     }
   }, [map])
 
-  const startGame = () => {
-    if (!mode || !isConnected) return
+  const enterGameSession = useCallback(() => {
     setInGame(true)
     setGrid(Array(100).fill(0))
     setHiddenPosition(null)
     setGameStatus('waiting')
+  }, [])
 
+  const startGame = () => {
+    if (!mode || !isConnected) return
+    if (opponent === 'pvp') {
+      setIsMatchmaking(true)
+      setMatchmakeTimer(5)
+      return
+    }
+    enterGameSession()
   }
+
+  useEffect(() => {
+    let interval: any
+    if (isMatchmaking && matchmakeTimer > 0) {
+      interval = setInterval(() => {
+        setMatchmakeTimer(prev => prev - 1)
+      }, 1000)
+    } else if (isMatchmaking && matchmakeTimer === 0) {
+      setIsMatchmaking(false)
+      setOpponent('bot')
+      enterGameSession()
+      playSound('start')
+    }
+    return () => clearInterval(interval)
+  }, [isMatchmaking, matchmakeTimer, enterGameSession, playSound])
 
   const handleCellClick = (index: number) => {
     if (gameStatus === 'finished') return
@@ -641,6 +666,34 @@ function GameContent() {
       <div className="fixed inset-0 pointer-events-none z-[1]">
         {[...Array(8)].map((_, i) => <div key={i} className="pixel-particle" />)}
       </div>
+
+      {/* ===== MATCHMAKING MODAL ===== */}
+      {isMatchmaking && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
+          <div className="relative bg-gradient-to-b from-slate-900 to-slate-950 border border-ritual-primary/50 rounded-2xl p-8 w-full max-w-md shadow-2xl shadow-ritual-primary/20 animate-fade-in-up text-center">
+            <h3 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'Orbitron', sans-serif" }}>Searching for Opponent</h3>
+            <div className="flex justify-center mb-6">
+              <div className="relative w-24 h-24">
+                <div className="absolute inset-0 border-4 border-ritual-primary/20 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-ritual-accent rounded-full border-t-transparent animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-3xl font-bold text-white">
+                  {matchmakeTimer}
+                </div>
+              </div>
+            </div>
+            <p className="text-slate-400 mb-6">
+              {matchmakeTimer > 0 ? "Looking for a worthy challenger..." : "No opponent found. Switching to AI..."}
+            </p>
+            <button 
+              onClick={() => { setIsMatchmaking(false); playSound('click') }}
+              className="px-6 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors border border-slate-700 font-bold"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ===== LEADERBOARD MODAL ===== */}
       {showLeaderboard && (
